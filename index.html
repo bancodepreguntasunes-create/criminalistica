@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Criminalística: Procesa la Escena | Simulador Interactivo</title>
+  <style>
+/* ==========================================================================
+   ESTILOS FORENSES TÁCTICOS
+   ========================================================================== */
+:root {
+  --bg-dark-primary: #070d18;
+  --bg-dark-secondary: #0d172a;
+  --bg-card: #121e36;
+  --bg-card-hover: #182847;
+  --border-forensic: #1e355b;
+  --border-light: #2d4c7d;
+  --color-cyan: #06b6d4;
+  --color-yellow: #f59e0b;
+  --color-yellow-bright: #fbbf24;
+  --color-yellow-glow: rgba(245, 158, 11, 0.35);
+  --color-success: #10b981;
+  --color-danger: #ef4444;
+  --text-main: #f8fafc;
+  --text-sub: #cbd5e1;
+  --text-muted: #8497b0;
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, Monaco, Consolas, monospace;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  min-height: 100vh;
+  background-color: var(--bg-dark-primary);
+  background-image: 
+    radial-gradient(circle at 15% 15%, rgba(6, 182, 212, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 85% 85%, rgba(245, 158, 11, 0.04) 0%, transparent 40%),
+    linear-gradient(180deg, #070d18 0%, #0a1324 100%);
+  background-attachment: fixed;
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+}
+
+/* Header */
+.forensic-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0.85rem 1.5rem;
+  background-color: rgba(13, 23, 42, 0.95);
+  border-bottom: 2px solid var(--border-forensic);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-left { display: flex; align-items: center; gap: 1.2rem; }
+.case-badge {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background-color: rgba(6, 182, 212, 0.1); border: 1px solid var(--color-cyan);
+  padding: 0.35rem 0.75rem; border-radius: var(--radius-sm);
+  font-family: var(--font-mono); font-size: 0.8rem; color: var(--color-cyan);
+}
+.header-main-title { font-size: 1.15rem; font-weight: 800; color: #fff; text-transform: uppercase; }
+.header-subtitle { font-size: 0.72rem; color: var(--color-yellow-bright); font-family: var(--font-mono); }
+.header-right { display: flex; align-items: center; gap: 1rem; }
+.score-display-card {
+  background: linear-gradient(135deg, rgba(18, 30, 54, 0.9), rgba(13, 23, 42, 0.9));
+  border: 1px solid var(--color-yellow); padding: 0.4rem 0.9rem;
+  border-radius: var(--radius-md); text-align: right;
+  box-shadow: 0 0 15px var(--color-yellow-glow);
+}
+.score-label { font-size: 0.65rem; color: var(--color-yellow-bright); font-family: var(--font-mono); }
+.score-num { font-size: 1.35rem; font-weight: 800; color: #fff; font-family: var(--font-mono); }
+
+/* Cinta policial */
+.police-tape-bar {
+  width: 100%; height: 26px;
+  background: repeating-linear-gradient(-45deg, #f59e0b 0, #f59e0b 16px, #18181b 16px, #18181b 32px);
+  overflow: hidden; display: flex; align-items: center;
+  border-top: 1px solid #d97706; border-bottom: 1px solid #d97706;
+}
+.tape-content {
+  font-family: var(--font-mono); font-size: 0.7rem; font-weight: 900;
+  color: #000; background: #f59e0b; padding: 0.1rem 1.5rem;
+  letter-spacing: 0.15em; white-space: nowrap; animation: scroll-tape 25s linear infinite;
+}
+@keyframes scroll-tape { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+/* Botones */
+.btn-primary-action {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #000; font-family: var(--font-sans); font-size: 1.05rem; font-weight: 800;
+  padding: 0.95rem 2.2rem; border-radius: var(--radius-md); border: 2px solid #fbbf24;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 0.75rem;
+  box-shadow: 0 4px 20px var(--color-yellow-glow); transition: all 0.25s ease;
+}
+.btn-primary-action:hover { background: linear-gradient(135deg, #fbbf24, #f59e0b); transform: translateY(-2px); }
+.btn-secondary-action {
+  background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-light);
+  padding: 0.85rem 1.6rem; border-radius: var(--radius-md); font-size: 0.95rem; font-weight: 600;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 0.6rem;
+}
+
+/* Pantallas */
+.microsite-viewport { max-width: 1100px; margin: 1.5rem auto 3rem; padding: 0 1.25rem; }
+.screen-view { display: none; opacity: 0; transform: translateY(10px); transition: opacity 0.35s ease, transform 0.35s ease; }
+.screen-view.active { display: block; opacity: 1; transform: translateY(0); }
+
+/* Portada */
+.portada-hero {
+  background: linear-gradient(180deg, rgba(18, 30, 54, 0.85) 0%, rgba(13, 23, 42, 0.95) 100%);
+  border: 1px solid var(--border-forensic); border-radius: var(--radius-lg);
+  padding: 2.2rem 2rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6);
+}
+.portada-title { font-size: 2.4rem; font-weight: 900; color: #fff; margin: 0.8rem 0; }
+.portada-lead { font-size: 1.05rem; color: var(--text-sub); margin-bottom: 1.5rem; }
+.portada-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+.stat-pill {
+  display: flex; align-items: center; gap: 0.8rem; background-color: rgba(9, 17, 34, 0.7);
+  border: 1px solid var(--border-forensic); border-radius: var(--radius-md); padding: 0.85rem 1rem;
+}
+.scene-cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+.preview-card {
+  background: var(--bg-card); border: 1px solid var(--border-forensic);
+  border-radius: var(--radius-md); padding: 1.2rem;
+}
+.card-tag {
+  font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700;
+  padding: 0.2rem 0.5rem; border-radius: var(--radius-sm);
+  background: rgba(245, 158, 11, 0.15); color: var(--color-yellow-bright);
+  border: 1px solid var(--color-yellow); display: inline-block; margin-bottom: 0.8rem;
+}
+
+/* Área de Imagen e Ilustración de la Escena */
+.scene-visual-board {
+  background: linear-gradient(180deg, #0a1324 0%, #0d182e 100%);
+  border: 1px solid var(--border-forensic); border-radius: var(--radius-md);
+  padding: 1.25rem; margin-bottom: 1.5rem; transition: all 0.4s ease;
+}
+.scene-visual-board.uv-active {
+  background: radial-gradient(circle at 50% 50%, #200f38 0%, #070312 100%) !important;
+  border-color: #c084fc !important; box-shadow: 0 0 25px rgba(192, 132, 252, 0.45) !important;
+}
+.scene-visual-board.uv-active .scene-svg-art {
+  filter: hue-rotate(250deg) saturate(190%) contrast(115%);
+}
+.scene-visual-board.uv-active .uv-reactive {
+  filter: drop-shadow(0 0 8px #00f5d4) drop-shadow(0 0 18px #c084fc);
+}
+.scene-diagram-header {
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.6rem;
+  margin-bottom: 0.75rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.btn-vision-mode {
+  background: #0d1b2a; border: 1px solid var(--border-light); color: var(--text-sub);
+  padding: 0.35rem 0.85rem; border-radius: var(--radius-sm); font-family: var(--font-mono);
+  font-size: 0.75rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem;
+}
+.btn-vision-mode.active {
+  background: rgba(6, 182, 212, 0.25); border-color: var(--color-cyan); color: var(--color-cyan);
+}
+.btn-vision-mode.uv-btn.active {
+  background: rgba(168, 85, 247, 0.35); border-color: #c084fc; color: #f3e8ff;
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.6);
+}
+.evidence-tags-strip { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
+.evidence-tag-badge {
+  background: rgba(245, 158, 11, 0.12); border: 1px solid var(--color-yellow);
+  color: var(--color-yellow-bright); font-family: var(--font-mono); font-size: 0.75rem;
+  padding: 0.25rem 0.6rem; border-radius: var(--radius-sm); cursor: pointer;
+}
+.evidence-tag-badge:hover { border-color: var(--color-cyan); background: rgba(6, 182, 212, 0.2); }
+.scene-svg-art { width: 100%; max-height: 270px; background-color: #050a14; border-radius: var(--radius-sm); display: block; }
+
+/* Tarjeta de Preguntas */
+.question-card {
+  background: var(--bg-card); border: 1px solid var(--border-forensic);
+  border-radius: var(--radius-lg); padding: 1.75rem 2rem;
+}
+.question-phase-badge {
+  display: inline-block; font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700;
+  color: var(--color-cyan); background: rgba(6, 182, 212, 0.12); border: 1px solid var(--color-cyan);
+  padding: 0.25rem 0.65rem; border-radius: var(--radius-sm); margin-bottom: 0.9rem;
+}
+.question-statement { font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 1.5rem; }
+.options-container { display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 1.5rem; }
+.option-btn {
+  background: var(--bg-dark-secondary); border: 1px solid var(--border-forensic);
+  border-radius: var(--radius-md); padding: 1rem 1.2rem; color: var(--text-main);
+  font-size: 0.96rem; text-align: left; cursor: pointer; display: flex; align-items: flex-start; gap: 0.9rem;
+  width: 100%; transition: all 0.2s ease;
+}
+.option-btn:hover:not(:disabled) { background: var(--bg-card-hover); border-color: var(--color-cyan); }
+.option-letter {
+  width: 28px; height: 28px; background: rgba(255, 255, 255, 0.06); border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-weight: 800; font-size: 0.85rem; color: var(--color-cyan); flex-shrink: 0;
+}
+.option-btn.selected-correct {
+  background: rgba(16, 185, 129, 0.15) !important; border-color: var(--color-success) !important; color: #fff !important;
+}
+.option-btn.selected-correct .option-letter { background: var(--color-success); color: #000; }
+.option-btn.selected-wrong {
+  background: rgba(239, 68, 68, 0.15) !important; border-color: var(--color-danger) !important; color: #fca5a5 !important;
+}
+.option-btn.selected-wrong .option-letter { background: var(--color-danger); color: #fff; }
+.option-btn.revealed-correct { border-color: var(--color-success) !important; background: rgba(16, 185, 129, 0.08) !important; }
+
+/* Feedback */
+.feedback-box {
+  background: #091325; border: 2px solid var(--border-forensic);
+  border-radius: var(--radius-md); padding: 1.35rem 1.5rem; margin-top: 1rem;
+}
+.feedback-box.hidden { display: none; }
+.feedback-box.is-correct { border-color: var(--color-success); background: linear-gradient(180deg, rgba(16, 185, 129, 0.08) 0%, #091325 100%); }
+.feedback-box.is-wrong { border-color: var(--color-danger); background: linear-gradient(180deg, rgba(239, 68, 68, 0.08) 0%, #091325 100%); }
+.feedback-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; }
+.feedback-status-badge { font-family: var(--font-mono); font-size: 0.85rem; font-weight: 800; padding: 0.25rem 0.65rem; border-radius: var(--radius-sm); }
+.feedback-box.is-correct .feedback-status-badge { background: var(--color-success); color: #000; }
+.feedback-box.is-wrong .feedback-status-badge { background: var(--color-danger); color: #fff; }
+.btn-continue-step {
+  background: linear-gradient(135deg, var(--color-cyan), #0284c7); color: #fff; border: none;
+  padding: 0.75rem 1.6rem; border-radius: var(--radius-md); font-weight: 700; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 0.5rem;
+}
+
+/* Modal y Glosario */
+.forensic-modal-overlay {
+  position: fixed; inset: 0; background-color: rgba(3, 7, 18, 0.85); backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center; padding: 1.5rem; z-index: 200;
+}
+.forensic-modal-overlay.hidden { display: none; }
+.forensic-modal-window {
+  background: var(--bg-card); border: 2px solid var(--color-cyan); border-radius: var(--radius-lg);
+  width: 100%; max-width: 850px; max-height: 90vh; display: flex; flex-direction: column;
+}
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--border-forensic); }
+.modal-body-scroll { padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
+.inst-card { background: #091326; border: 1px solid var(--border-forensic); border-radius: var(--radius-md); padding: 1rem; }
+  </style>
+</head>
+<body class="forensic-theme">
+
+  <!-- Encabezado con Puntaje -->
+  <header class="forensic-header">
+    <div class="header-left">
+      <div class="case-badge">CASO PERICIAL <strong>#CRIM-2026-EXP7</strong></div>
+      <div class="header-title-box">
+        <h1 class="header-main-title">CRIMINALÍSTICA: PROCESA LA ESCENA</h1>
+        <p class="header-subtitle">SIMULADOR TÁCTICO DE INSPECCIÓN OCULAR Y CADENA DE CUSTODIA</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="score-display-card">
+        <div class="score-label">PUNTAJE</div>
+        <div class="score-num"><span id="currentScore">0</span> / 40 PTS</div>
+      </div>
+      <button type="button" class="btn-primary-action" id="btnOpenKitModal" style="padding:0.4rem 0.9rem; font-size:0.85rem;">
+        🧰 Maletín Pericial
+      </button>
+    </div>
+  </header>
+
+  <!-- Cinta de acordonamiento -->
+  <div class="police-tape-bar">
+    <div class="tape-content">ESCENA DEL CRIMEN — NO PASAR — ZONA DE EXCLUSIÓN PERICIAL — CADENA DE CUSTODIA VIGENTE — POLICÍA CIENTÍFICA</div>
+  </div>
+
+  <main class="microsite-viewport">
+
+    <!-- PANTALLA 0: PORTADA -->
+    <section class="screen-view active" id="viewPortada">
+      <div class="portada-hero">
+        <div class="card-tag">⚠️ PROTOCOLO ESTANDARIZADO DE CRIMINALÍSTICA</div>
+        <h1 class="portada-title">Criminalística: Procesa la Escena</h1>
+        <p class="portada-lead">
+          Juego interactivo de entrenamiento táctico para estudiantes de criminología y ciencias forenses.
+          Afronta tres escenas del crimen reales con ilustraciones vectoriales dinámicas y una fase de laboratorio pericial
+          aplicando con exactitud fijación, rastreo, recolección, embalaje y cadena de custodia.
+        </p>
+
+        <div style="margin-bottom: 2rem;">
+          <button type="button" class="btn-primary-action" id="btnComenzarHero">
+            🚨 Comenzar Investigación ➔
+          </button>
+        </div>
+
+        <div class="portada-stats-grid">
+          <div class="stat-pill"><span style="font-size:1.6rem;">🔎</span><div><strong>3 Escenas Críticas</strong><div style="font-size:0.75rem; color:var(--text-muted);">Robo, Homicidio y Tránsito</div></div></div>
+          <div class="stat-pill"><span style="font-size:1.6rem;">🔬</span><div><strong>1 Laboratorio Central</strong><div style="font-size:0.75rem; color:var(--text-muted);">ADN, Huellas, Balística y Vidrio</div></div></div>
+          <div class="stat-pill"><span style="font-size:1.6rem;">🎯</span><div><strong>20 Preguntas</strong><div style="font-size:0.75rem; color:var(--text-muted);">+2 Pts por acierto (40 Pts máx)</div></div></div>
+          <div class="stat-pill"><span style="font-size:1.6rem;">🧰</span><div><strong>15 Instrumentos</strong><div style="font-size:0.75rem; color:var(--text-muted);">Protocolo legal estandarizado</div></div></div>
+        </div>
+
+        <div class="scene-cards-grid">
+          <div class="preview-card"><div class="card-tag">CASO 01</div><h3>🏠 Robo en Casa</h3><p style="font-size:0.85rem; color:var(--text-muted);">Ventana forzada, vidrios rotos, huella dactilar latente y sangre seca.</p></div>
+          <div class="preview-card"><div class="card-tag">CASO 02</div><h3>🌲 Homicidio en Parque</h3><p style="font-size:0.85rem; color:var(--text-muted);">Cuerpo, arma blanca, huellas en barro y cabellos en vestimenta.</p></div>
+          <div class="preview-card"><div class="card-tag">CASO 03</div><h3>🚗 Accidente Vial</h3><p style="font-size:0.85rem; color:var(--text-muted);">Choque, vidrios dispersos, huellas de derrape, aceite y alcoholemia.</p></div>
+          <div class="preview-card" style="border-color:var(--color-cyan);"><div class="card-tag" style="border-color:var(--color-cyan); color:var(--color-cyan);">FASE 04</div><h3>🧪 Laboratorio</h3><p style="font-size:0.85rem; color:var(--text-muted);">ADN STR, Dactiloscopia AFIS, Balística, Microscopía y GRIM.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANTALLA 1: PREGUNTAS CON ILUSTRACIONES VISUALES -->
+    <section class="screen-view" id="viewQuestion">
+      <div style="background:#0a1428; border:1px solid var(--border-forensic); border-radius:var(--radius-md); padding:1rem 1.5rem; margin-bottom:1.25rem; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div class="card-tag" id="sceneBadgePill">ESCENA 1</div>
+          <h2 id="sceneTitleText" style="color:#fff; font-size:1.35rem;">Robo en una Casa</h2>
+          <p id="sceneBriefingText" style="color:var(--text-muted); font-size:0.85rem;"></p>
+        </div>
+        <div style="font-family:var(--font-mono); font-size:1.1rem; color:var(--color-cyan);">
+          Pregunta <span id="qCurrentNumber" style="font-weight:900; color:#fff;">1</span> / <span id="qTotalNumber">5</span>
+        </div>
+      </div>
+
+      <!-- Tablero Gráfico con Ilustración SVG y Modo UV -->
+      <div class="scene-visual-board" id="sceneVisualBoard"></div>
+
+      <!-- Pregunta de Selección Múltiple -->
+      <div class="question-card">
+        <div class="question-phase-badge" id="questionPhaseBadge">FASE DE FIJACIÓN</div>
+        <h3 class="question-statement" id="questionStatement">Cargando...</h3>
+
+        <div class="options-container" id="optionsContainer"></div>
+
+        <div class="feedback-box hidden" id="feedbackBox">
+          <div class="feedback-header">
+            <span class="feedback-status-badge" id="feedbackStatusBadge">CORRECTO</span>
+            <span id="feedbackPointsTag" style="font-family:var(--font-mono); font-weight:800;">+2 PUNTOS</span>
+          </div>
+          <div id="feedbackBody" style="font-size:0.95rem; line-height:1.55;"></div>
+          <div style="display:flex; justify-content:flex-end; margin-top:1rem;">
+            <button type="button" class="btn-continue-step" id="btnNextQuestion">
+              <span>Siguiente Pregunta</span> ➔
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANTALLA 2: RESULTADOS DE ESCENA -->
+    <section class="screen-view" id="viewSceneResult">
+      <div style="background:var(--bg-card); border:1px solid var(--border-forensic); border-radius:var(--radius-lg); padding:2.2rem;">
+        <h2 id="resultSceneName" style="color:#fff; font-size:1.8rem; margin-bottom:0.5rem;">Resultado</h2>
+        <p id="resultSummaryLead" style="color:var(--text-sub); margin-bottom:1.5rem;"></p>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:1.25rem; margin-bottom:2rem;">
+          <div style="background:#091326; border:1px solid var(--color-yellow); border-radius:var(--radius-md); padding:1.35rem;">
+            <div style="font-size:0.75rem; color:var(--text-muted); font-family:var(--font-mono);">PUNTAJE DE ESTA ESCENA</div>
+            <div style="font-size:2.4rem; font-weight:900; color:var(--color-yellow-bright); font-family:var(--font-mono);">
+              <span id="sceneScoreObtained">10</span> / 10 PTS
+            </div>
+          </div>
+          <div style="background:#091326; border:1px solid var(--border-forensic); border-radius:var(--radius-md); padding:1.35rem;">
+            <div style="font-size:0.75rem; color:var(--text-muted); font-family:var(--font-mono);">PUNTAJE TOTAL ACUMULADO</div>
+            <div style="font-size:2.4rem; font-weight:900; color:var(--color-cyan); font-family:var(--font-mono);">
+              <span id="cumulativeScoreObtained">10</span> / 40 PTS
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#0a1428; border:1px solid var(--border-forensic); border-radius:var(--radius-md); padding:1.25rem; margin-bottom:1.5rem;">
+          <h3 style="color:var(--color-yellow-bright); font-size:0.85rem; font-family:var(--font-mono); margin-bottom:0.8rem;">📦 INDICIOS ASEGURADOS:</h3>
+          <div id="sceneEvidenceChecklist" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:0.6rem;"></div>
+        </div>
+
+        <div style="background:#0a1428; border:1px solid var(--border-forensic); border-radius:var(--radius-md); padding:1.25rem; margin-bottom:1.5rem;">
+          <h3 style="color:var(--color-yellow-bright); font-size:0.85rem; font-family:var(--font-mono); margin-bottom:0.8rem;">🔑 FUNDAMENTO FORENSE CLAVE:</h3>
+          <div id="sceneLearningsBody" style="font-size:0.92rem; color:var(--text-sub);"></div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-top:2rem;">
+          <button type="button" class="btn-secondary-action" id="btnRetryScene">🔄 Repetir Escena</button>
+          <button type="button" class="btn-primary-action" id="btnNextScene">
+            <span id="btnNextSceneText">Proceder a la Siguiente Escena</span> ➔
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANTALLA 3: DICTAMEN FINAL -->
+    <section class="screen-view" id="viewFinalDictamen">
+      <div style="background:var(--bg-card); border:2px solid var(--color-cyan); border-radius:var(--radius-lg); padding:2.5rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--color-cyan); padding-bottom:1.5rem; margin-bottom:2rem;">
+          <div>
+            <div style="color:var(--color-yellow-bright); font-family:var(--font-mono); font-size:0.75rem;">INSTITUTO FORENSE DE INVESTIGACIÓN CRIMINAL</div>
+            <h2 style="color:#fff; font-size:1.8rem;">DICTAMEN PERICIAL FINAL Y ACREDITACIÓN</h2>
+          </div>
+          <div style="font-size:3rem;">🏛️</div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1.5rem; margin-bottom:2rem;">
+          <div style="background:linear-gradient(135deg, rgba(6,182,212,0.15), rgba(18,30,54,0.9)); border:2px solid var(--color-cyan); border-radius:var(--radius-md); padding:1.75rem; text-align:center;">
+            <div style="color:var(--color-cyan); font-family:var(--font-mono); font-size:0.8rem;">CALIFICACIÓN GLOBAL</div>
+            <div style="font-size:3.5rem; font-weight:900; color:#fff; font-family:var(--font-mono);" id="finalTotalScore">40</div>
+            <div style="color:var(--color-success); font-weight:800;" id="finalPercentage">100% EFICACIA PROBATORIA</div>
+          </div>
+          <div style="background:#0a1428; border:1px solid var(--border-forensic); border-radius:var(--radius-md); padding:1.75rem;">
+            <div style="color:var(--text-muted); font-size:0.75rem; font-family:var(--font-mono);">RANGO OBTENIDO:</div>
+            <div style="font-size:1.4rem; font-weight:800; color:var(--color-yellow-bright);" id="finalRankName">PERITO FORENSE JEFE DE ESCENA</div>
+            <p id="finalRankDesc" style="color:var(--text-sub); font-size:0.9rem; margin-top:0.5rem;"></p>
+          </div>
+        </div>
+
+        <h3 style="color:var(--color-yellow-bright); font-size:0.9rem; font-family:var(--font-mono); margin-bottom:1rem;">🧰 LOS 15 INSTRUMENTOS NORMATIVOS EVALUADOS:</h3>
+        <div id="finalInstrumentCardsGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:1rem;"></div>
+
+        <div style="display:flex; justify-content:center; gap:1.5rem; margin-top:2.5rem;">
+          <button type="button" class="btn-secondary-action" onclick="window.print()">🖨️ Imprimir Dictamen</button>
+          <button type="button" class="btn-primary-action" id="btnRestartGame">🔄 Iniciar Nuevo Caso</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: MALETÍN DE INSTRUMENTOS -->
+  <div class="forensic-modal-overlay hidden" id="kitModalOverlay">
+    <div class="forensic-modal-window">
+      <div class="modal-header">
+        <h2 style="color:#fff; font-size:1.15rem;">🧰 MALETÍN PERICIAL: 15 INSTRUMENTOS FORENSES</h2>
+        <button type="button" style="background:none; border:none; color:var(--text-muted); font-size:1.8rem; cursor:pointer;" id="btnCloseKitModal">&times;</button>
+      </div>
+      <div class="modal-body-scroll" id="modalInstrumentsList"></div>
+    </div>
+  </div>
+
+  <script>
+  /* =========================================================================
+     ILUSTRACIONES VECTORIALES FORENSES DE ALTA DEFINICIÓN
+     ========================================================================= */
+  const SVG_SCENES = {
+    house: `
+      <svg class="scene-svg-art" viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="wallG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#111c30"/><stop offset="100%" stop-color="#070d18"/></linearGradient>
+          <linearGradient id="floorG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3d2c1d"/><stop offset="100%" stop-color="#1a120b"/></linearGradient>
+          <radialGradient id="bloodG" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#ef4444"/><stop offset="70%" stop-color="#991b1b"/><stop offset="100%" stop-color="#450a0a"/></radialGradient>
+        </defs>
+        <!-- Pared y Piso de madera -->
+        <rect x="0" y="0" width="900" height="190" fill="url(#wallG)"/>
+        <rect x="0" y="190" width="900" height="110" fill="url(#floorG)"/>
+        <line x1="0" y1="190" x2="900" y2="190" stroke="#f59e0b" stroke-width="2" stroke-dasharray="10 5"/>
+
+        <!-- Cuadro decorativo -->
+        <rect x="40" y="40" width="80" height="100" fill="#0b1728" stroke="#ca8a04" stroke-width="2"/>
+        <circle cx="80" cy="75" r="10" fill="#e2e8f0"/>
+        <polygon points="50,130 80,95 110,130" fill="#334155"/>
+
+        <!-- VENTANA FORZADA (Centro) -->
+        <g transform="translate(260, 25)">
+          <rect x="-10" y="-10" width="260" height="155" fill="#1e293b" stroke="#475569" stroke-width="4" rx="3"/>
+          <rect x="6" y="6" width="228" height="123" fill="#030712"/>
+          <circle cx="195" cy="30" r="14" fill="#ffffff" opacity="0.9"/>
+          <!-- Grietas radiales del vidrio roto -->
+          <path d="M 60,30 L 95,75 L 40,110 L 25,65 Z" fill="#020617" stroke="#38bdf8" stroke-width="1.5"/>
+          <path d="M 95,75 L 140,50 M 95,75 L 140,95 M 95,75 L 80,130 M 95,75 L 15,90" stroke="#7dd3fc" stroke-width="2" fill="none"/>
+          <!-- Muesca de palanca forzada [01] -->
+          <rect x="110" y="62" width="10" height="14" fill="#f59e0b" stroke="#ef4444" stroke-width="2"/>
+          <g transform="translate(85, 130)">
+            <polygon points="12,0 24,24 0,24" fill="#f59e0b"/>
+            <text x="12" y="20" font-size="11" font-weight="900" fill="#000" text-anchor="middle" font-family="monospace">01</text>
+          </g>
+
+          <!-- Huella dactilar latente con lupa de inspección [02] -->
+          <g transform="translate(245, 45)" class="uv-reactive">
+            <circle cx="15" cy="15" r="24" fill="rgba(6,182,212,0.15)" stroke="#06b6d4" stroke-width="2"/>
+            <line x1="32" y1="32" x2="48" y2="48" stroke="#06b6d4" stroke-width="3" stroke-linecap="round"/>
+            <path d="M 7,15 Q 15,6 23,15 Q 23,23 15,23 Q 7,23 7,15 Z" fill="none" stroke="#22d3ee" stroke-width="1.5"/>
+            <circle cx="15" cy="15" r="1.5" fill="#22d3ee"/>
+            <g transform="translate(22, -12)">
+              <polygon points="10,0 20,20 0,20" fill="#f59e0b"/>
+              <text x="10" y="17" font-size="10" font-weight="900" fill="#000" text-anchor="middle" font-family="monospace">02</text>
+            </g>
+          </g>
+        </g>
+
+        <!-- VIDRIOS ROTOS EN EL SUELO [03] -->
+        <g transform="translate(340, 215)">
+          <polygon points="10,8 35,2 24,24" fill="#38bdf8" stroke="#bae6fd" stroke-width="1"/>
+          <polygon points="45,15 70,6 62,28" fill="#0ea5e9" stroke="#ffffff" stroke-width="1"/>
+          <polygon points="80,10 105,22 88,32" fill="#7dd3fc" stroke="#bae6fd" stroke-width="1"/>
+          <g transform="translate(-20, 8)">
+            <polygon points="12,0 24,24 0,24" fill="#f59e0b"/>
+            <text x="12" y="20" font-size="11" font-weight="900" fill="#000" text-anchor="middle" font-family="monospace">03</text>
+          </g>
+        </g>
+
+        <!-- GOTA DE SANGRE SECA [04] -->
+        <g transform="translate(640, 225)" class="uv-reactive">
+          <ellipse cx="25" cy="16" rx="20" ry="10" fill="url(#bloodG)" stroke="#450a0a" stroke-width="1.5"/>
+          <circle cx="50" cy="12" r="3" fill="#991b1b"/>
+          <!-- Testigo métrico L forense -->
+          <g transform="translate(45, 10)">
+            <rect x="0" y="0" width="30" height="6" fill="#fff" stroke="#000" stroke-width="0.5"/>
+            <rect x="0" y="0" width="6" height="25" fill="#fff" stroke="#000" stroke-width="0.5"/>
+            <rect x="0" y="0" width="6" height="6" fill="#000"/>
+            <rect x="12" y="0" width="6" height="6" fill="#000"/>
+          </g>
+          <g transform="translate(-18, 2)">
+            <polygon points="12,0 24,24 0,24" fill="#f59e0b"/>
+            <text x="12" y="20" font-size="11" font-weight="900" fill="#000" text-anchor="middle" font-family="monospace">04</text>
+          </g>
+        </g>
+
+        <!-- Cinta de acordonamiento policial -->
+        <polygon points="0,270 900,245 900,265 0,290" fill="#f59e0b" opacity="0.9"/>
+        <text x="450" y="262" font-size="10" font-weight="900" fill="#000" font-family="monospace" text-anchor="middle">ZONA CRITICA DE EXCLUSION PERICIAL - POLICIA CIENTIFICA</text>
+      </svg>
+    `,
+    park: `
+      <svg class="scene-svg-art" viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="skyP" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#020617"/><stop offset="100%" stop-color="#0c1a2e"/></linearGradient>
+          <linearGradient id="grassP" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#14301d"/><stop offset="100%" stop-color="#0a160e"/></linearGradient>
+        </defs>
+        <rect x="0" y="0" width="900" height="160" fill="url(#skyP)"/>
+        <!-- Siluetas de árboles -->
+        <g fill="#071322">
+          <polygon points="30,160 60,80 90,160"/><polygon points="80,160 120,65 160,160"/>
+          <polygon points="720,160 760,65 800,160"/><polygon points="780,160 820,80 860,160"/>
+        </g>
+        <!-- Farola con haz de luz -->
+        <g transform="translate(130, 20)">
+          <rect x="6" y="20" width="4" height="120" fill="#475569"/>
+          <circle cx="8" cy="18" r="7" fill="#fef08a"/>
+          <polygon points="8,22 -60,260 180,260" fill="#fef08a" opacity="0.12"/>
+        </g>
+        <!-- Terreno y sendero de barro -->
+        <rect x="0" y="160" width="900" height="140" fill="url(#grassP)"/>
+        <path d="M 0,260 Q 250,200 500,225 T 900,200 L 900,300 L 0,300 Z" fill="#2a1f18"/>
+
+        <!-- SILUETA DE LA VÍCTIMA EN EL SUELO [01] -->
+        <g transform="translate(370, 160)">
+          <ellipse cx="80" cy="30" rx="50" ry="18" fill="#0f172a" stroke="#f8fafc" stroke-width="2" stroke-dasharray="6 3"/>
+          <circle cx="20" cy="30" r="12" fill="#0f172a" stroke="#f8fafc" stroke-width="2"/>
+          <!-- Cabellos en la ropa aumentados [04] -->
+          <g transform="translate(70, 20)" class="uv-reactive">
+            <circle cx="15" cy="15" r="18" fill="rgba(245,158,11,0.15)" stroke="#fbbf24" stroke-width="1.8"/>
+            <path d="M 6,10 Q 15,22 24,12" stroke="#fef08a" stroke-width="2" fill="none"/>
+            <circle cx="6" cy="10" r="2" fill="#fff"/>
+            <g transform="translate(20, -15)">
+              <polygon points="10,0 20,20 0,20" fill="#f59e0b"/>
+              <text x="10" y="17" font-size="10" font-weight="900" fill="#000" text-anchor="middle" font-family="monospace">04</text>
+            </g>
+          </g>
+          <g transform="translate(-15, 15)">
+            <polygon points="12,0 24,24 0,24" fill="#f59e0b"/>
+            <text x="12" y="20" font-size="11" font-weight="900" fill="#000" text-anchor="middle" font-family="monospace">01</text>
+          </g>
+        </g>
+
+        <!-- CUCHILLO ENSANGRENTADO [02] -->
+        <g transform="translate(240, 210)">
+          <polygon points="0,10 42,6 68,12 42,16 0,14" fill="#cbd5e1" stroke="#475569" stroke-width="1.5"/>
+          <path d="M 35,10 Q 50,14 65,12 Z" fill="#b91c1c"/>
+          <rect x="-20" y="8" width="20" height="8" fill="#1c1917" rx="2"/>
+          <rect x="15" y="22" width="35" height="5" fill="#fff" stroke="#000" stroke-width="0.5"/>
+          <g transform="translate(-25, 2)">
+            <polygon points="12,0 24,24 0,24" fill="#f59e0b"/>
+            <text x="12" y="20" font-size="11" font-weight="900" fill="#000" text-anchor="middle" font-family="monospace">02</text>
+          </g>
+        </g>
+
+        <!-- HUELLA DE CALZADO EN BARRO [03] -->
+        <g transform="translate(680, 230)">
+          <ellipse cx="30" cy="22" rx="28" ry="16" fill="#1c140e" stroke="#3d2c1d" stroke-width="2"/>
+          <line x1="16" y1="16" x2="44" y2="16" stroke="#3d2c1d" stroke-width="2.5"/>
+          <line x1="14" y1="22" x2="46" y2="22" stroke="#3d2c1d" stroke-width="2.5"/>
+          <line x1="18" y1="28" x2="42" y2="28" stroke="#ef4444" stroke-width="1.5"/>
+          <g transform="translate(-18, 0)">
+            <polygon points="12,0 24,24 0,24" fill="#f59e0b"/>
+            <text x="12" y="20" font-size="11" font-weight="900" fill="#000" text-anchor="middle" font-family="monospace">03</text>
+          </g>
+        </g>
+
+        <!-- Brújula topográfica -->
+        <g transform="translate(810, 25)">
+          <circle cx="22" cy="22" r="20" fill="#0b172a" stroke="#06b6d4" stroke-width="2"/>
+          <polygon points="22,6 27,22 17,22" fill="#ef4444"/>
+          <polygon points="22,38 27,22 17,22" fill="#94a3b8"/>
+          <text x="22" y="4" font-size="9" font-weight="900" fill="#06b6d4" text-anchor="middle" font-family="monospace">N</text>
+        </g>
+      </svg>
+    `,
+    traffic: `
+      <svg class="scene-svg-art" viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="900" height="300" fill="#111722"/>
+        <line x1="0" y1="130" x2="900" y2="130" stroke="#facc15" stroke-width="4"/>
+        <line x1="0" y1="195" x2="900" y2="195" stroke="#ffffff" stroke-width="3" stroke-dasharray="25 15" opacity="0.6"/>
+
+        <!-- Huellas de frenada y derrape -->
+        <path d="M 40,225 Q 180,215 320,160" stroke="#000" stroke-width="8" stroke-linecap="round" opacity="0.85" fill="none"/>
+        <path d="M 40,250 Q 180,240 320,185" stroke="#000" stroke-width="8" stroke-linecap="round" opacity="0.85" fill="none"/>
+
+        <!-- Poste y Triangulación Métrica -->
+        <g transform="translate(680, 15)">
+          <rect x="8" y="0" width="8" height="180" fill="#64748b"/>
+          <text x="12" y="195" font-size="9" fill="#06b6d4" font-family="monospace" font-weight="bold" text-anchor="middle">PTO FIJO #1</text>
+        </g>
+        <line x1="480" y1="130" x2="688" y2="95" stroke="#06b6d4" stroke-width="2" stroke-dasharray="6 3"/>
+        <text x="580" y="105" font-size="9" fill="#22d3ee" font-family="monospace" font-weight="bold">D = 14.85 m</text>
+
+        <!-- VEHÍCULO IMPACTADO [01] -->
+        <g transform="translate(320, 75)">
+          <path d="M 10,70 L 40,25 L 125,25 L 175,50 L 165,80 L 0,85 Z" fill="#1e3a8a" stroke="#60a5fa" stroke-width="2"/>
+          <polygon points="45,30 75,30 70,60 36,60" fill="#0284c7" opacity="0.6"/>
+          <!-- Parabrisas estallado -->
+          <path d="M 50,38 L 68,52 L 42,58 M 62,36 L 55,60" stroke="#ffffff" stroke-width="1.8"/>
+          <circle cx="35" cy="85" r="16" fill="#0f172a" stroke="#475569" stroke-width="4"/>
+          <circle cx="140" cy="85" r="16" fill="#0f172a" stroke="#475569" stroke-width="4"/>
+          <g transform="translate(170, 60)">
+            <polygon points="12,0 24,24 0,24" fill="#f59e0b"/>
+            <text x="12" y="20" font-size="11" font-weight="900" fill="#000" text-anchor="middle" font-family="monospace">01</text>
+          </g>
+        </g>
+
+        <!-- VIDRIOS EN PAVIMENTO [02] -->
+        <g transform="translate(510, 155)">
+          <polygon points="10,8 24,18 12,24" fill="#7dd3fc" stroke="#fff" stroke-width="1"/>
+          <polygon points="35,12 55,8 48,26" fill="#38bdf8" stroke="#fff" stroke-width="1"/>
+          <g transform="translate(-18, 10)">
+            <polygon points="12,0 24,24 0,24" fill="#f59e0b"/>
+            <text x="12" y="20" font-size="11" font-weight="900" fill="#000" text-anchor="middle" font-family="monospace">02</text>
+          </g>
+        </g>
+
+        <!-- MANCHA DE ACEITE [03] -->
+        <g transform="translate(250, 195)">
+          <ellipse cx="45" cy="20" rx="50" ry="16" fill="#090d16" stroke="#1f2937" stroke-width="2"/>
+          <path d="M 20,18 Q 45,14 68,22" stroke="rgba(6,182,212,0.4)" stroke-width="2" fill="none"/>
+          <g transform="translate(-18, 5)">
+            <polygon points="12,0 24,24 0,24" fill="#f59e0b"/>
+            <text x="12" y="20" font-size="11" font-weight="900" fill="#000" text-anchor="middle" font-family="monospace">03</text>
+          </g>
+        </g>
+
+        <!-- BOTELLA DE LICOR VOLCADA [04] -->
+        <g transform="translate(535, 95)">
+          <rect x="0" y="5" width="28" height="10" fill="#15803d" stroke="#166534" stroke-width="1" rx="2"/>
+          <rect x="26" y="7" width="12" height="6" fill="#15803d"/>
+          <ellipse cx="50" cy="28" rx="12" ry="5" fill="#ca8a04" opacity="0.6"/>
+          <g transform="translate(35, -12)">
+            <polygon points="12,0 24,24 0,24" fill="#f59e0b"/>
+            <text x="12" y="20" font-size="11" font-weight="900" fill="#000" text-anchor="middle" font-family="monospace">04</text>
+          </g>
+        </g>
+      </svg>
+    `,
+    lab: `
+      <svg class="scene-svg-art" viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="900" height="300" fill="#060f1e"/>
+        <line x1="0" y1="25" x2="900" y2="25" stroke="#06b6d4" stroke-width="2" opacity="0.3"/>
+        <text x="450" y="42" font-size="11" font-family="monospace" fill="#06b6d4" text-anchor="middle" letter-spacing="3">LABORATORIO FORENSE CENTRAL: RECEPCIÓN Y ANÁLISIS</text>
+
+        <!-- Mesada de acero inoxidable -->
+        <rect x="30" y="180" width="840" height="25" fill="#334155" stroke="#64748b" stroke-width="1.5"/>
+        <rect x="50" y="205" width="800" height="95" fill="#0f172a"/>
+
+        <!-- ESTACIÓN 1: COMPARACIÓN BALÍSTICA [03] -->
+        <g transform="translate(60, 65)">
+          <rect x="25" y="45" width="24" height="50" fill="#475569"/>
+          <polygon points="20,15 28,30 15,30" fill="#06b6d4"/><polygon points="46,15 38,30 50,30" fill="#06b6d4"/>
+          <!-- Monitor de estrías coincidentes -->
+          <rect x="75" y="20" width="100" height="75" fill="#020617" stroke="#06b6d4" stroke-width="1.5" rx="3"/>
+          <line x1="125" y1="22" x2="125" y2="93" stroke="#ef4444" stroke-width="1"/>
+          <line x1="90" y1="40" x2="160" y2="40" stroke="#f59e0b" stroke-width="2"/>
+          <line x1="95" y1="60" x2="155" y2="60" stroke="#f59e0b" stroke-width="2"/>
+          <text x="125" y="86" font-size="7.5" fill="#10b981" font-family="monospace" text-anchor="middle">BALÍSTICA: MATCH</text>
+        </g>
+
+        <!-- ESTACIÓN 2: MONITOR AFIS (Dactiloscopia) [02] -->
+        <g transform="translate(280, 65)">
+          <rect x="0" y="10" width="140" height="95" fill="#020617" stroke="#06b6d4" stroke-width="1.5" rx="3"/>
+          <circle cx="35" cy="50" r="18" fill="none" stroke="#22d3ee" stroke-width="1.5" stroke-dasharray="3 2"/>
+          <circle cx="105" cy="50" r="18" fill="none" stroke="#10b981" stroke-width="1.5" stroke-dasharray="3 2"/>
+          <circle cx="40" cy="45" r="3" fill="none" stroke="#ef4444"/>
+          <circle cx="110" cy="45" r="3" fill="none" stroke="#ef4444"/>
+          <text x="70" y="96" font-size="8" fill="#10b981" font-family="monospace" text-anchor="middle">AFIS: COTEJO POSITIVO</text>
+        </g>
+
+        <!-- ESTACIÓN 3: PERFIL DE ADN STR [01] -->
+        <g transform="translate(460, 65)">
+          <rect x="0" y="10" width="150" height="95" fill="#020617" stroke="#38bdf8" stroke-width="1.5" rx="3"/>
+          <text x="75" y="25" font-size="7.5" fill="#38bdf8" font-family="monospace" text-anchor="middle">ELECTROFORESIS ADN</text>
+          <line x1="45" y1="38" x2="65" y2="38" stroke="#22d3ee" stroke-width="3"/>
+          <line x1="45" y1="60" x2="65" y2="60" stroke="#22d3ee" stroke-width="3"/>
+          <line x1="85" y1="38" x2="105" y2="38" stroke="#10b981" stroke-width="3"/>
+          <line x1="85" y1="60" x2="105" y2="60" stroke="#10b981" stroke-width="3"/>
+          <text x="75" y="96" font-size="8" fill="#10b981" font-family="monospace" text-anchor="middle">ADN: 99.99% MATCH</text>
+        </g>
+
+        <!-- ESTACIÓN 4: GRIM REFRACCIÓN DE VIDRIO [05] -->
+        <g transform="translate(650, 65)">
+          <rect x="0" y="10" width="160" height="95" fill="#020617" stroke="#f59e0b" stroke-width="1.5" rx="3"/>
+          <text x="80" y="25" font-size="7.5" fill="#f59e0b" font-family="monospace" text-anchor="middle">GRIM: REFRACCIÓN</text>
+          <path d="M 20,75 Q 60,35 130,50" stroke="#f59e0b" stroke-width="2.5" fill="none"/>
+          <circle cx="75" cy="46" r="3.5" fill="#38bdf8"/>
+          <text x="80" y="96" font-size="8" fill="#f59e0b" font-family="monospace" text-anchor="middle">nD = 1.51872</text>
+        </g>
+      </svg>
+    `
+  };
+
+  /* =========================================================================
+     BASE DE DATOS Y PREGUNTAS
+     ========================================================================= */
+  const FORENSIC_INSTRUMENTS = [
+    { name: "Guantes de Nitrilo", badge: "BIOSEGURIDAD", icon: "🧤", purpose: "Evitan la transferencia de células, sudor o ADN del perito al lugar de los hechos y protegen contra patógenos o químicos.", packingType: "Desecho en bolsa roja tras cada recolección." },
+    { name: "Cinta de Acordonamiento", badge: "PROTECCIÓN", icon: "🚧", purpose: "Delimita y aísla física y jurídicamente el perímetro crítico de exclusión impidiendo el paso a curiosos.", packingType: "Instalación perimetral visible de doble anillo." },
+    { name: "Cámara Forense Profesional", badge: "FIJACIÓN", icon: "📷", purpose: "Documenta visualmente el estado inalterado del lugar de los hechos en planos panorámicos, generales, medios y primeros planos a 90°.", packingType: "Estuche acolchado y tarjetas con bloqueo de escritura." },
+    { name: "Testigo Métrico", badge: "FIJACIÓN", icon: "📏", purpose: "Proporciona una escala dimensional milimétrica exacta en el mismo plano focal que el indicio para calcular dimensiones reales.", packingType: "Esterilizable o desechable para evitar transferencia de residuos." },
+    { name: "Pinzas Estériles", badge: "RECOLECCIÓN", icon: "🥢", purpose: "Permiten levantar indicios microscópicos o punzocortantes (cabellos, fibras, vidrios) sin tocarlos con las manos y sin dañar bulbos ni filos.", packingType: "Material estéril de un solo uso o desinfectado en autoclave." },
+    { name: "Hisopo Estéril", badge: "RECOLECCIÓN", icon: "🧽", purpose: "Sirve para absorber muestras biológicas líquidas o rehidratar costras de sangre seca (con solución salina estéril) para la extracción de ADN.", packingType: "Debe dejarse secar a temperatura ambiente y embalarse en papel transpirable." },
+    { name: "Bolsa de Papel Kraft", badge: "EMBALAJE", icon: "🛍️", purpose: "Permite la transpiración natural de muestras biológicas húmedas o prendas con fluidos, evitando la condensación y el moho que destruyen el ADN.", packingType: "Cierre doblado y precintado con sellos de evidencia firmados." },
+    { name: "Bolsa Plástica Hermética", badge: "EMBALAJE", icon: "💼", purpose: "Embala indicios inertes, secos, no degradables y no biológicos (como vidrios secos o piezas mecánicas).", packingType: "Precintado de seguridad. Nunca utilizar con muestras biológicas húmedas." },
+    { name: "Sobre de Papel", badge: "EMBALAJE", icon: "✉️", purpose: "Contiene microindicios diminutos como cabellos o fibras, impidiendo que se pierdan por ranuras y evitando la atracción electrostática del plástico.", packingType: "Doblado farmacéutico interno (tipo boticario) dentro de sobre exterior sellado." },
+    { name: "Kit de Huellas (Polvo + Cinta)", badge: "REVELADO", icon: "🖐️", purpose: "Aplica polvos dactilares magnéticos o volcánicos sobre superficies no porosas para revelar huellas latentes y trasplantarlas con cinta a tarjeta de contraste.", packingType: "Tarjetas de soporte protegidas en sobre rotulado." },
+    { name: "Marcadores de Evidencia", badge: "SEÑALIZACIÓN", icon: "🏷️", purpose: "Identifican individualmente cada indicio en el terreno mediante números visibles correlacionados con el acta de inspección.", packingType: "Conos o carpas plásticas amarillas numeradas de alta visibilidad." },
+    { name: "Luz Forense UV / ALS", badge: "INSPECCIÓN", icon: "🔦", purpose: "Emite luz ultravioleta y azul que excita la fotoluminiscencia y fluorescencia natural de fluidos biológicos y microfibras sintéticas.", packingType: "Uso obligatorio con gafas protectoras de filtrado espectral." },
+    { name: "Cinta Métrica Forense", badge: "PLANIMETRÍA", icon: "📐", purpose: "Permite realizar triangulaciones planimétricas exactas desde dos puntos fijos permanentes hasta la posición de vehículos, indicios o víctimas.", packingType: "Cinta de fibra de vidrio no deformable y distanciómetro láser." },
+    { name: "Brújula Topográfica", badge: "PLANIMETRÍA", icon: "🧭", purpose: "Determina el Norte magnético geográfico en la escena, requisito legal obligatorio para orientar el croquis topográfico pericial.", packingType: "Protegida contra interferencias magnéticas metálicas." },
+    { name: "Sellos de Evidencia Inviolables", badge: "CUSTODIA", icon: "🔒", purpose: "Garantizan la integridad física y jurídica del embalaje evidenciando cualquier intento de apertura clandestina; se firman 'a caballo' por el perito.", packingType: "Cintas de seguridad destructibles con número de serie único." }
+  ];
+
+  const GAME_STAGES = [
+    {
+      id: "escena1", number: 1, title: "Escena 1: Robo en una Casa", svgKey: "house",
+      location: "Vivienda particular - Habitación principal (Zona cerrada)",
+      briefing: "Ventana forzada con palanca, vidrios rotos en el piso, huella dactilar visible en el marco esmaltado y gota de sangre seca.",
+      evidenceList: [
+        { title: "Ventana forzada", desc: "Muescas de palanca y fractura de cierre." },
+        { title: "Huella latente", desc: "Impresión en el marco liso de madera blanca." },
+        { title: "Vidrios rotos", desc: "Fragmentos cortantes esparcidos sobre el piso." },
+        { title: "Gota de sangre seca", desc: "Costra hemática dejada por corte del sospechoso." }
+      ],
+      learnings: "En robos en interiores, aislar con cinta de acordonamiento y usar guantes de nitrilo evita la contaminación cruzada. El rastreo por cuadrantes previene pisar vidrios o sangre. Las huellas en marcos lisos se revelan con polvo y cinta, y las muestras biológicas secas se levantan con hisopo estéril y se embalan SIEMPRE en papel para evitar el moho.",
+      questions: [
+        {
+          phase: "Fase de Fijación y Protección", instrumentEvaluated: "Cinta de acordonamiento y Guantes de nitrilo",
+          question: "Al ingresar a la vivienda con la ventana forzada y vidrios en el piso, ¿cuál es la primera medida de protección y fijación antes de intervenir?",
+          options: [
+            { id: "A", text: "Colocarse guantes de nitrilo y delimitar un perímetro de exclusión con cinta de acordonamiento para aislar la escena de curiosos y contaminación exterior.", isCorrect: true },
+            { id: "B", text: "Entrar de prisa a barrer los vidrios para no cortarse los zapatos al caminar.", isCorrect: false, wrongReason: "Barrer o limpiar antes de la fijación destruye definitivamente las posiciones originales de los indicios." },
+            { id: "C", text: "Probar las llaves del dueño en la cerradura principal para ver si también la forzaron.", isCorrect: false, wrongReason: "Manipular cerraduras contamina con ADN del perito y borra marcas de palanca o huellas latentes." },
+            { id: "D", text: "Espolvorear talco doméstico por el suelo sin acordonar para ver si hay pisadas.", isCorrect: false, wrongReason: "Usar polvos domésticos contamina químicamente la escena y destruye muestras biológicas." }
+          ],
+          feedbackCorrect: "¡Correcto! La cinta de acordonamiento delimita la zona de exclusión impidiendo el paso a personas no autorizadas, y los guantes de nitrilo evitan transferir huellas dactilares o células del perito al lugar de los hechos. +2 puntos."
+        },
+        {
+          phase: "Fase de Rastreo Sistemático", instrumentEvaluated: "Método de Cuadrantes",
+          question: "Para rastrear metódicamente la habitación sin pasar por alto microindicios ni pisar los vidrios y fluidos en el piso, ¿qué método de rastreo pericial es el idóneo para este recinto cerrado?",
+          options: [
+            { id: "A", text: "Método de búsqueda libre y aleatoria caminando por donde haya menos fragmentos.", isCorrect: false, wrongReason: "La búsqueda libre carece de rigor y provoca omisión de indicios o su destrucción al pisar inadvertidamente." },
+            { id: "B", text: "Método por cuadrantes (o rejilla), dividiendo el suelo en sectores ordenados y avanzando con luz rasante para inspeccionar cada área sin pisar indicios previos.", isCorrect: true },
+            { id: "C", text: "Método radial saliendo rápidamente desde la ventana hacia la calle sin mirar el interior.", isCorrect: false, wrongReason: "Salir hacia la calle deja sin inspeccionar el suelo de la habitación donde el sospechoso caminó." },
+            { id: "D", text: "Método de punto a punto corriendo directo hacia los cajones y la caja fuerte.", isCorrect: false, wrongReason: "Correr hacia objetos de valor ignora el camino de aproximación y pisotea microindicios." }
+          ],
+          feedbackCorrect: "¡Correcto! El método de cuadrantes en espacios cerrados garantiza una inspección geométrica exhaustiva sin zonas ciegas, permitiendo fijar y proteger cada elemento antes de que el equipo avance sobre él. +2 puntos."
+        },
+        {
+          phase: "Fase de Revelado Dactilar", instrumentEvaluated: "Kit de huellas (polvo + cinta) y Cámara forense",
+          question: "En la superficie lisa del marco de madera esmaltada de la ventana se detecta una huella dactilar latente. ¿Qué técnica e instrumentos se deben emplear para su fijación y levantamiento?",
+          options: [
+            { id: "A", text: "Raspar el marco con un bisturí y guardar las virutas en una servilleta.", isCorrect: false, wrongReason: "Raspar la madera destruye de inmediato las crestas papilares sebáceas." },
+            { id: "B", text: "Aplicar el kit de huellas (polvo dactiloscópico con brocha suave o magnética), fotografiar con cámara forense y testigo métrico, y trasplantar con cinta adhesiva a una tarjeta de contraste.", isCorrect: true },
+            { id: "C", text: "Limpiar la huella con un hisopo con alcohol para desinfectarla antes de fotografiarla.", isCorrect: false, wrongReason: "El alcohol disuelve las grasas y aminoácidos del sudor, borrando la huella para siempre." },
+            { id: "D", text: "Presionar fuertemente una cinta métrica sobre la huella para que quede marcada la silueta.", isCorrect: false, wrongReason: "Presionar objetos directamente sobre una huella latente sin reactivo aplasta y empasta las crestas." }
+          ],
+          feedbackCorrect: "¡Correcto! El kit de huellas (polvo + cinta) adhiere partículas microscópicas a los lípidos y sudor de las crestas papilares sin dañarlas; la cámara forense con testigo métrico documenta la escala 1:1 y la cinta de trasplante asegura el dibujo para el cotejo lofoscópico. +2 puntos."
+        },
+        {
+          phase: "Fase de Recolección de Biológicos", instrumentEvaluated: "Hisopo estéril",
+          question: "En el piso se localiza una gota de sangre seca, posiblemente proveniente de un corte sufrido por el intruso con el vidrio. ¿Qué instrumento y método deben utilizarse para levantarla?",
+          options: [
+            { id: "A", text: "Frotar con un trapo de tela multiuso que haya en la cocina hasta remover la mancha.", isCorrect: false, wrongReason: "Un trapo doméstico introduce bacterias y ADN ajeno, destruyendo la pureza de la muestra." },
+            { id: "B", text: "Raspar la mancha con las uñas descubiertas del perito sobre una hoja de periódico.", isCorrect: false, wrongReason: "El contacto directo con las uñas contamina con el propio ADN del perito y viola la bioseguridad." },
+            { id: "C", text: "Utilizar un hisopo estéril humedecido ligeramente con solución salina estéril o agua destilada, rehidratando la costra con suavidad y dejándolo secar al aire protegido.", isCorrect: true },
+            { id: "D", text: "Aplicar calor con un secador de pelo a máxima potencia para derretir la sangre seca.", isCorrect: false, wrongReason: "El calor intenso desnaturaliza las proteínas y fragmenta las cadenas de ADN, inutilizándolo." }
+          ],
+          feedbackCorrect: "¡Correcto! El hisopo estéril humedecido con solución fisiológica estéril rehidrata y absorbe la costra hemática seca sin introducir ADN contaminante, garantizando la obtención de un perfil genético limpio en laboratorio. +2 puntos."
+        },
+        {
+          phase: "Fase de Embalaje y Custodia", instrumentEvaluated: "Bolsa de papel y Sellos de evidencia",
+          question: "Para remitir los indicios recolectados (vidrios secos e hisopo con muestra biológica) al laboratorio, ¿qué embalaje y formalidad técnica exige el protocolo?",
+          options: [
+            { id: "A", text: "Embalar los vidrios secos en contenedor rígido/bolsa plástica gruesa; el hisopo seco en sobre o bolsa de papel transpirable; precintar con sellos de evidencia inviolables y llenar la planilla de Cadena de Custodia.", isCorrect: true },
+            { id: "B", text: "Meter ambos indicios revueltos en una misma bolsa plástica hermética cerrada con cinta de embalar común.", isCorrect: false, wrongReason: "Las muestras biológicas selladas en plástico generan condensación y moho que destruyen el ADN; además los vidrios romperían el hisopo." },
+            { id: "C", text: "Guardar los vidrios en los bolsillos del pantalón del perito y llevar el hisopo en la mano sin rotular.", isCorrect: false, wrongReason: "Genera riesgo grave de corte para el perito y anula por completo la cadena de custodia." },
+            { id: "D", text: "Entregar los indicios envueltos en papel higiénico directamente al juez sin acta ni sellos.", isCorrect: false, wrongReason: "Cualquier indicio sin embalaje reglamentario ni registro de cadena de custodia es inadmisible judicialmente." }
+          ],
+          feedbackCorrect: "¡Correcto! La bolsa de papel deja respirar la muestra biológica y evita el moho que destruye el ADN; la bolsa plástica o contenedor rígido contiene elementos cortantes secos; los sellos de evidencia garantizan la inviolabilidad del paquete y el acta de Cadena de Custodia acredita su trazabilidad judicial. +2 puntos."
+        }
+      ]
+    },
+    {
+      id: "escena2", number: 2, title: "Escena 2: Homicidio en un Parque", svgKey: "park",
+      location: "Parque público arbolado - Zona abierta sobre tierra húmeda y césped",
+      briefing: "Cuerpo de la víctima en el césped, arma blanca (cuchillo con restos hemáticos) a 2 metros, huellas de zapatos en tierra húmeda y cabellos adheridos a la ropa.",
+      evidenceList: [
+        { title: "Cuerpo de la víctima", desc: "Posición decúbito dorsal con heridas incisas." },
+        { title: "Arma blanca (Cuchillo)", desc: "Cuchillo con máculas hemáticas y mango apto para dactiloscopia/ADN." },
+        { title: "Huella de calzado en barro", desc: "Pisada en bajorrelieve en suelo húmedo." },
+        { title: "Cabellos en chaqueta", desc: "Filamentos pilosos ajenos a la víctima adheridos a la prenda." }
+      ],
+      learnings: "En homicidios al aire libre, los marcadores numerados y el testigo métrico fijan con precisión milimétrica el arma antes de moverla. El rastreo en espiral con brújula asegura cobertura total orientada al norte magnético. Los cabellos se manipulan con pinzas estériles y se embalan en sobres de papel para evitar cargas electrostáticas, mientras que las pisadas en barro se rescatan con vaciado en yeso dental.",
+      questions: [
+        {
+          phase: "Fase de Fijación y Marcación", instrumentEvaluated: "Marcadores de evidencia, Testigo métrico y Cámara forense",
+          question: "A dos metros del cuerpo de la víctima se halla un cuchillo con manchas pardo-rojizas sobre la hierba. ¿Cómo se debe fijar e individualizar antes de levantarlo?",
+          options: [
+            { id: "A", text: "Tomar el cuchillo de inmediato con la mano desnuda para medir la hoja con una rama del suelo.", isCorrect: false, wrongReason: "Manipular con la mano desnuda deposita grasa y ADN del perito en el mango, destruyendo la muestra del agresor." },
+            { id: "B", text: "Colocar un marcador de evidencia numerado junto al arma, situar un testigo métrico a su lado y realizar fijación fotográfica con cámara forense en planos general, medio y primer plano perpendicular.", isCorrect: true },
+            { id: "C", text: "Clavar el cuchillo con fuerza en un tronco cercano para que la humedad de la hierba no oxide el metal.", isCorrect: false, wrongReason: "Clavar el arma altera la escena, introduce resina vegetal y destruye las manchas de sangre." },
+            { id: "D", text: "Pintar la hoja del cuchillo con pintura fluorescente para que sea visible en fotos nocturnas.", isCorrect: false, wrongReason: "Pintar el indicio altera químicamente los restos hemáticos impidiendo pruebas de ADN." }
+          ],
+          feedbackCorrect: "¡Correcto! Los marcadores de evidencia individualizan el indicio en actas y fotos; el testigo métrico proporciona la escala milimétrica real para cotejar con las heridas en autopsia; y la cámara forense documenta su estado inalterado. +2 puntos."
+        },
+        {
+          phase: "Fase de Rastreo en Espacios Abiertos", instrumentEvaluated: "Brújula y Cinta métrica",
+          question: "El parque es un área abierta extensa con senderos y arboleda. Para buscar posibles rutas de escape, armas arrojadas u otros indicios periféricos orientando el croquis del lugar, ¿qué técnica e instrumentos se deben emplear?",
+          options: [
+            { id: "A", text: "Rastreo metódico en espiral o por franjas paralelas con el equipo alineado, utilizando brújula para orientar el norte del croquis y cinta métrica para triangular hallazgos.", isCorrect: true },
+            { id: "B", text: "Caminar en zigzag apresurado mirando al azar entre los arbustos sin registrar orientación.", isCorrect: false, wrongReason: "Caminar sin rumbo produce omisiones y sobrepisado de huellas de calzado de la fuga del agresor." },
+            { id: "C", text: "Soltar perros domésticos sin adiestrar para que corran libremente por el parque.", isCorrect: false, wrongReason: "Animales sin control contaminan la escena con saliva y pelos y destrozan las huellas del terreno." },
+            { id: "D", text: "Revisar únicamente las copas de los árboles e ignorar la superficie de la tierra.", isCorrect: false, wrongReason: "La inmensa mayoría de los indicios en homicidios al aire libre se encuentran en el suelo o vegetación baja." }
+          ],
+          feedbackCorrect: "¡Correcto! El rastreo en espiral o franjas paralelas garantiza que ningún sector quede sin inspeccionar; la brújula orienta el croquis topográfico al Norte magnético reglamentario y la cinta métrica permite triangular la ubicación exacta de cada indicio. +2 puntos."
+        },
+        {
+          phase: "Fase de Recolección de Fibras y Cabellos", instrumentEvaluated: "Pinzas estériles",
+          question: "Sobre la chaqueta de la víctima se observan varios cabellos que no concuerdan con el color ni longitud de los de la víctima. ¿Qué instrumento específico se debe emplear para levantarlos sin alterar la raíz?",
+          options: [
+            { id: "A", text: "Pinzas estériles con puntas protegidas, tomándolos con delicadeza por el tallo para no fracturar el bulbo piloso ni transferir contaminantes.", isCorrect: true },
+            { id: "B", text: "Un cepillo de cerdas metálicas frotando fuertemente la ropa para arrancar todos los pelos juntos.", isCorrect: false, wrongReason: "El cepillado agresivo quiebra los cabellos, arranca la cutícula y destruye la raíz impidiendo el cotejo." },
+            { id: "C", text: "Cinta de carrocero industrial pegándola y despegándola con la mano descubierta.", isCorrect: false, wrongReason: "El adhesivo no forense deposita pegamento insoluble y células del perito sobre el pelo." },
+            { id: "D", text: "Cortar el pelo con una tijera desafilada por la mitad antes de levantarlo.", isCorrect: false, wrongReason: "Cortar el pelo elimina la raíz (bulbo piloso), donde se concentra el ADN nuclear necesario para la prueba genética." }
+          ],
+          feedbackCorrect: "¡Correcto! Las pinzas estériles evitan transferir grasa o células del operador y permiten sujetar el pelo con suavidad por el tallo sin romper el bulbo piloso, elemento indispensable para la extracción de ADN nuclear en laboratorio. +2 puntos."
+        },
+        {
+          phase: "Fase de Embalaje de Microindicios", instrumentEvaluated: "Sobre de papel (tipo boticario)",
+          question: "Para embalar los cabellos recolectados evitando que se pierdan, se contaminen o queden atrapados por estática, ¿cuál es el embalaje primario normativo?",
+          options: [
+            { id: "A", text: "Un sobre de papel con doblado interno tipo boticario (papel filtro o glasé), sellado y rotulado con ficha técnica.", isCorrect: true },
+            { id: "B", text: "Una bolsa plástica de polietileno común con cierre rápido.", isCorrect: false, wrongReason: "Las bolsas de polietileno generan estática que hace que los pelos se adhieran a las paredes y se rompan al sacarlos." },
+            { id: "C", text: "Un tubo de ensayo con agua de la lluvia recolectada del suelo del parque.", isCorrect: false, wrongReason: "Sumergir el cabello en agua estancada prolifera bacterias que pudren el bulbo en pocas horas." },
+            { id: "D", text: "Dejarlos pegados en un post-it abierto sobre la carpeta de notas.", isCorrect: false, wrongReason: "Los papeles abiertos provocan la pérdida o voladura del cabello por corrientes de aire." }
+          ],
+          feedbackCorrect: "¡Correcto! El sobre de papel (doblado especial tipo boticario) protege microindicios como cabellos y fibras, previniendo la atracción electrostática que producen los plásticos y asegurando que no escapen por los bordes. +2 puntos."
+        },
+        {
+          phase: "Fase de Moldeado de Huellas de Calzado", instrumentEvaluated: "Testigo métrico y Vaciado en yeso",
+          question: "En el lodo húmedo junto al sendero se localiza una huella de calzado hundida (en bajorrelieve). ¿Qué procedimiento técnico de fijación y levantamiento es el correcto?",
+          options: [
+            { id: "A", text: "Fotografiar a 90° con cámara forense y testigo métrico en dos orientaciones de luz, y realizar un vaciado con yeso dental o escayola forense (casteo) con marco de contención para obtener el molde 3D.", isCorrect: true },
+            { id: "B", text: "Acercar un soplete de fuego directo para cocer y secar el barro al instante.", isCorrect: false, wrongReason: "El fuego directo resquebraja el lodo, evapora la humedad con violencia y deforma los bordes de la suela." },
+            { id: "C", text: "Pisar sobre la huella con el zapato del perito para ver si el tamaño coincide a ojo.", isCorrect: false, wrongReason: "Pisar la evidencia sobrepone un dibujo nuevo y destruye definitivamente la huella del autor." },
+            { id: "D", text: "Rellenar la huella con plastilina común y aplastarla fuertemente con la mano.", isCorrect: false, wrongReason: "La plastilina se adhiere al lodo, deforma las estrías y contamina con aceites sintéticos." }
+          ],
+          feedbackCorrect: "¡Correcto! La fotografía perpendicular con testigo métrico registra la proporción milimétrica en 2D, y el vaciado con yeso dental/escayola crea una réplica tridimensional exacta que capta desgastes de suela, cortes y marcas de uso para cotejo con el zapato del sospechoso. +2 puntos."
+        }
+      ]
+    },
+    {
+      id: "escena3", number: 3, title: "Escena 3: Accidente de Tránsito", svgKey: "traffic",
+      location: "Vía urbana / Calzada asfáltica (Zona de impacto y derrape)",
+      briefing: "Vehículo impactado con deformaciones graves, vidrios dispersos por la calzada, mancha de aceite con huellas de frenado, botella de licor en el habitáculo y conductor desorientado.",
+      evidenceList: [
+        { title: "Vehículo impactado", desc: "Deformación frontal y parabrisas astillado." },
+        { title: "Vidrios de parabrisas", desc: "Microfragmentos laminados y templados en pavimento." },
+        { title: "Marcas de derrape y aceite", desc: "Huellas de neumático bloqueado sobre el asfalto y derrame de fluidos." },
+        { title: "Botella de bebida alcohólica", desc: "Envase abierto en el suelo del conductor con olor etílico." }
+      ],
+      learnings: "En accidentes viales, la seguridad y la preservación de huellas dinámicas es la prioridad. La cinta métrica permite la triangulación planimétrica para calcular velocidades de impacto. La luz forense UV detecta microfibras en zonas de choque. Los vidrios se recogen con pinzas en bolsas plásticas herméticas para pruebas de refracción, y la evidencia etílica se asegura con sellos y pruebas oficiales de alcoholemia.",
+      questions: [
+        {
+          phase: "Fase de Fijación y Triangulación Vial", instrumentEvaluated: "Cinta de acordonamiento y Cinta métrica",
+          question: "En una calzada con tráfico rodado, restos de carrocería y marcas de derrape en el pavimento, ¿cuál es la prioridad inmediata de fijación técnica y seguridad?",
+          options: [
+            { id: "A", text: "Delimitar un perímetro de seguridad amplio con cinta de acordonamiento y señalización vial, y medir la posición de los vehículos y marcas de frenado con cinta métrica mediante triangulación desde puntos fijos (postes/bordillos).", isCorrect: true },
+            { id: "B", text: "Permitir que los coches sigan circulando sobre los vidrios para que los neumáticos los muelan y limpien la calle.", isCorrect: false, wrongReason: "Permitir el tránsito borra las huellas de frenada, desplaza indicios y puede provocar nuevos accidentes." },
+            { id: "C", text: "Empujar el coche chocado inmediatamente a una calle lateral sin tomar fotografías ni medidas.", isCorrect: false, wrongReason: "Mover el vehículo antes de la planimetría imposibilita reconstruir la velocidad y la dinámica del choque." },
+            { id: "D", text: "Echar arena y detergente sobre las huellas de frenada para que el piso no quede oscuro.", isCorrect: false, wrongReason: "Lavar o tapar las marcas de frenado destruye el cálculo pericial de velocidad y coeficientes de adherencia." }
+          ],
+          feedbackCorrect: "¡Correcto! La cinta de acordonamiento protege la vida del personal pericial y previene colisiones secundarias; la cinta métrica permite triangular distancias exactas desde referencias fijas para el cálculo físico de velocidades, aceleraciones y trayectoria de colisión. +2 puntos."
+        },
+        {
+          phase: "Fase de Búsqueda de Microtrazas", instrumentEvaluated: "Luz forense UV / ALS",
+          question: "Durante la inspección nocturna del parabrisas astillado y la zona de impacto, ¿qué instrumento lumínico forense es vital para detectar filamentos textiles microscópicos o fluidos no visibles a simple vista?",
+          options: [
+            { id: "A", text: "Una fuente de luz forense ultravioleta (ALS / luz UV) con gafas de filtrado espectral apropiadas para excitar la fotoluminiscencia de fibras y sustancias biológicas.", isCorrect: true },
+            { id: "B", text: "Un encendedor de gas moviéndolo cerca del motor con fuga de gasolina.", isCorrect: false, wrongReason: "El uso de fuego abierto en escenas viales con fugas de combustible provoca explosiones letales." },
+            { id: "C", text: "La pantalla de un teléfono móvil con el brillo bajo.", isCorrect: false, wrongReason: "La luz blanca débil de teléfonos no emite la longitud de onda ultravioleta necesaria para provocar fluorescencia óptica." },
+            { id: "D", text: "Un puntero láser rojo de juguete apuntando fijamente a los vidrios.", isCorrect: false, wrongReason: "Los punteros láser comunes carecen de espectro amplio para excitación de microtrazas y dañan la retina." }
+          ],
+          feedbackCorrect: "¡Correcto! La luz forense UV o de longitud de onda alterna (ALS) excita la fluorescencia natural de fibras textiles sintéticas, fluidos biológicos y micropartículas invisibles bajo luz común, permitiendo localizarlas sin tocarlas. +2 puntos."
+        },
+        {
+          phase: "Fase de Recolección de Indicios Físicos", instrumentEvaluated: "Pinzas estériles y Bolsa plástica",
+          question: "Sobre el pavimento hay cientos de fragmentos de vidrio de diferente procedencia (parabrisas laminado y ventanillas templadas). ¿Qué instrumentos y método deben emplearse para levantarlos con seguridad?",
+          options: [
+            { id: "A", text: "Recoger fragmentos representativos de cada sector usando pinzas estériles y colocarlos en bolsas plásticas resistentes o contenedores plásticos rígidos rotulados.", isCorrect: true },
+            { id: "B", text: "Levantar puñados con las manos descubiertas apretando fuertemente las aristas vivas.", isCorrect: false, wrongReason: "Genera cortes profundos en las manos del operador y transfiere células sanguíneas y dérmicas ajenas a los vidrios." },
+            { id: "C", text: "Barrer todo junto con una escoba vieja de la calle y echarlo en una bolsa de papel rota.", isCorrect: false, wrongReason: "Barrer mezcla vidrios de distintas zonas con basura callejera y destruye las superficies de fractura que se cotejan en laboratorio." },
+            { id: "D", text: "Moler los fragmentos con un mazo en el piso para que quepan en un frasco pequeño de medicamentos.", isCorrect: false, wrongReason: "Triturar los vidrios elimina las propiedades morfológicas y fracturas que demuestran la dirección del impacto." }
+          ],
+          feedbackCorrect: "¡Correcto! Las pinzas estériles permiten seleccionar fragmentos limpios sin riesgo de heridas para el perito, y las bolsas plásticas gruesas o botes rígidos protegen contra desgarros en indicios secos no biológicos, listos para pruebas de refracción y densidad. +2 puntos."
+        },
+        {
+          phase: "Fase de Evidencia Toxicológica", instrumentEvaluated: "Sellos de evidencia y Alcoholemia",
+          question: "En el habitáculo se halla una botella de licor destapada y el conductor muestra signos de intoxicación. ¿Qué medidas de aseguramiento y peritaje se deben disponer?",
+          options: [
+            { id: "A", text: "Embalar y sellar la botella con sellos de evidencia inviolables para análisis de contenido y lofoscopia, y requerir examen pericial de alcoholemia (etilómetro calibrado y/o extracción sanguínea reglamentaria).", isCorrect: true },
+            { id: "B", text: "Probar un trago del líquido para comprobar con el paladar si contiene alcohol de alta graduación.", isCorrect: false, wrongReason: "Probar sustancias en una escena del crimen es una infracción grave que expone al perito a venenos o tóxicos y destruye la prueba." },
+            { id: "C", text: "Vaciar el líquido por la alcantarilla para que el coche no huela mal durante el traslado.", isCorrect: false, wrongReason: "Desechar el líquido elimina la evidencia material toxicológica del contenido etílico." },
+            { id: "D", text: "Hacer saltar al conductor en un pie durante media hora para que elimine el alcohol por el sudor.", isCorrect: false, wrongReason: "Pruebas informales carecen de validez jurídica; la medición científica cuantitativa de alcoholemia requiere etilómetro o análisis de sangre." }
+          ],
+          feedbackCorrect: "¡Correcto! El sellado inmediato con sellos de evidencia evita la evaporación de alcohol y protege huellas latentes en el vidrio de la botella, mientras que la prueba oficial de alcoholemia (aire o sangre) provee la cuantificación toxicológica admitida legalmente en juicio. +2 puntos."
+        },
+        {
+          phase: "Fase de Cadena de Custodia Documental", instrumentEvaluated: "Formato de Cadena de Custodia y Sellos",
+          question: "Al finalizar el levantamiento de todos los indicios del siniestro vial, ¿qué garantía documental y física es obligatoria para certificar su validez probatoria ante los tribunales?",
+          options: [
+            { id: "A", text: "Precintar cada embalaje con sellos de evidencia inviolables (firmados por el perito a caballo sobre la cinta) y completar el Formato de Registro de Cadena de Custodia con detalles de fecha, hora, técnica de embalaje y custodios.", isCorrect: true },
+            { id: "B", text: "Anotar el número de caso en una servilleta de papel y dejar las bolsas en el maletero del patrullero sin precintar.", isCorrect: false, wrongReason: "Las notas informales y paquetes abiertos rompen la cadena de custodia y provocan la nulidad procesal de la prueba." },
+            { id: "C", text: "Publicar las fotos de las piezas del auto en redes sociales para que sirvan de testigo digital público.", isCorrect: false, wrongReason: "Viola el secreto de sumario judicial y no tiene ninguna validez en la cadena de custodia formal." },
+            { id: "D", text: "Entregar los paquetes al portero del juzgado sin solicitar recibo de entrega ni registrar la transferencia.", isCorrect: false, wrongReason: "La falta de registro de entrega y recepción invalida la trazabilidad y procedencia de la prueba." }
+          ],
+          feedbackCorrect: "¡Correcto! El sello de evidencia firmado a caballo garantiza que el paquete no sufrió aperturas clandestinas, y el formato de Cadena de Custodia es el documento obligatorio que demuestra la autenticidad e indemnidad del indicio desde la escena hasta el juicio oral. +2 puntos."
+        }
+      ]
+    },
+    {
+      id: "laboratorio", number: 4, title: "Sección 4: Laboratorio Forense Central", svgKey: "lab",
+      location: "Sede de Criminalística y Ciencias Forenses - Recepción de Indicios",
+      briefing: "Recepción de todos los indicios de las tres escenas. Como perito responsable, debes formular las solicitudes analíticas correspondientes.",
+      evidenceList: [
+        { title: "Indicios Biológicos", desc: "Costra hemática en hisopo (Escena 1) y cabellos con bulbo (Escena 2)." },
+        { title: "Indicios Dactilares", desc: "Huella en marco (Escena 1) y botella de licor (Escena 3)." },
+        { title: "Indicios Balísticos", desc: "Proyectil deformado y casquillo servido de caso conexo." },
+        { title: "Microfibras y Vidrio", desc: "Fibras de ropa y esquirlas de vidrio de parabrisas (Escena 3)." }
+      ],
+      learnings: "En el laboratorio forense cada indicio requiere una disciplina especializada: la Genética Forense (ADN) individualiza personas con marcadores STR; la Lofoscopia/Dactiloscopia compara minucias con la base AFIS; la Balística comparativa yuxtapone estrías y marcas de percutor; la Microscopía de fibras analiza birrefringencia; y el método GRIM mide el índice de refracción de vidrios.",
+      questions: [
+        {
+          phase: "Análisis de Genética Forense", instrumentEvaluated: "ADN / Marcadores STR",
+          question: "Para la muestra de hisopo con sangre seca levantada en el robo (Escena 1) y los cabellos con bulbo hallados en el homicidio (Escena 2), ¿qué análisis de laboratorio se debe solicitar para individualizar al autor con certeza categórica?",
+          options: [
+            { id: "A", text: "Análisis de Perfil Genético de ADN (mediante PCR y análisis de marcadores STR nucleares y/o ADN mitocondrial) para comparación con la base de datos de sospechosos o muestras de referencia indubitadas.", isCorrect: true },
+            { id: "B", text: "Examen serológico de grupo sanguíneo básico ABO en portaobjetos únicamente.", isCorrect: false, wrongReason: "El grupo sanguíneo solo descarta sospechosos pero jamás individualiza a una persona, ya que millones comparten el mismo grupo." },
+            { id: "C", text: "Prueba de luminol en el tubo de ensayo para ver si la sangre ya seca puede volver a brillar en la oscuridad.", isCorrect: false, wrongReason: "El luminol es un reactivo de orientación de campo para buscar manchas invisibles, no una técnica de identificación individual en laboratorio." },
+            { id: "D", text: "Prueba de densidad con agua salada para medir cuánto tarda el hisopo en flotar.", isCorrect: false, wrongReason: "No aporta ningún dato identificativo y contamina irreversiblemente el material celular." }
+          ],
+          feedbackCorrect: "¡Correcto! El análisis de ADN nuclear por marcadores STR proporciona un perfil genético individual con un poder de discriminación estadístico superior a 1 en miles de millones, permitiendo vincular de manera categórica al autor con la escena del delito. +2 puntos."
+        },
+        {
+          phase: "Análisis de Dactiloscopia", instrumentEvaluated: "Lofoscopia y Sistema AFIS",
+          question: "Se remiten al laboratorio las tarjetas de contraste con huellas latentes levantadas del marco de la ventana (Escena 1) y la botella de licor (Escena 3). ¿Qué análisis pericial y sistema biométrico se debe requerir?",
+          options: [
+            { id: "A", text: "Grafoscopía y caligrafía forense para deducir la personalidad del sospechoso por sus dedos.", isCorrect: false, wrongReason: "La grafoscopía estudia firmas y escrituras manuscritas, no los dibujos papilares de las yemas de los dedos." },
+            { id: "B", text: "Peritaje Dactiloscópico (Lofoscopia comparativa) para identificación de puntos característicos (minucias) y búsqueda automatizada en la base de datos biométrica AFIS.", isCorrect: true },
+            { id: "C", text: "Cromatografía en capa fina para separar los colores del sudor humano.", isCorrect: false, wrongReason: "El sudor humano no se separa en colores identificables con valor identificativo biométrico." },
+            { id: "D", text: "Radiografía de contraste para observar los huesos del dedo que presionó el vidrio.", isCorrect: false, wrongReason: "Las huellas latentes son depósitos superficiales de sudor y grasa; no contienen huesos." }
+          ],
+          feedbackCorrect: "¡Correcto! La Dactiloscopia coteja los dibujos papilares (arcos, presillas, verticilos) y sus puntos característicos (bifurcaciones, islotes) en el sistema AFIS (Automated Fingerprint Identification System) para lograr una individualización positiva e irrefutable. +2 puntos."
+        },
+        {
+          phase: "Análisis de Balística Forense", instrumentEvaluated: "Microscopio de Comparación Balística",
+          question: "En un caso conexo donde se remiten al laboratorio un casquillo servido y un proyectil deformado, ¿qué análisis de balística forense comparativa se debe solicitar para determinar si fueron percutidos por el arma incautada?",
+          options: [
+            { id: "A", text: "Balística identificativa/comparativa mediante Microscopio de Comparación Balística para cotejar las marcas de aguja percutora y extractor en la vaina, y las microestrías del rayado del ánima en el proyectil.", isCorrect: true },
+            { id: "B", text: "Pesar el proyectil en una báscula comercial y golpearlo con un martillo para ver si se aplana.", isCorrect: false, wrongReason: "Golpear el proyectil destruye las estrías microscópicas grabadas por el cañón, anulando la pericia." },
+            { id: "C", text: "Disparar el proyectil deformado con un tirachinas para cronometrar su velocidad de vuelo.", isCorrect: false, wrongReason: "Carece de todo rigor pericial y destruye las microhuellas balísticas." },
+            { id: "D", text: "Lijar el casquillo con lija metálica hasta que quede brillante para fotografiarlo.", isCorrect: false, wrongReason: "Lijar borra las microimprontas dejadas por la aguja percutora y el cierre de la recámara." }
+          ],
+          feedbackCorrect: "¡Correcto! El microscopio de comparación balística permite yuxtaponer en pantalla dividida las microestriaciones únicas grabadas por el rayado del ánima del cañón en el proyectil y las marcas del percutor en la vaina ('firma mecánica balística'), confirmando la identidad del arma de fuego. +2 puntos."
+        },
+        {
+          phase: "Análisis de Microscopía de Fibras", instrumentEvaluated: "Microscopía de luz polarizada y Espectrofotometría",
+          question: "Para las microfibras textiles recuperadas en la zona de choque (Escena 3) y los cabellos de la chaqueta (Escena 2), ¿qué análisis instrumental de laboratorio no destructivo se debe requerir para su cotejo morfológico y espectral?",
+          options: [
+            { id: "A", text: "Microscopía óptica de comparación, luz polarizada (PLM) y microespectrofotometría para analizar morfología, diámetro, birrefringencia y espectro cromático de absorción sin destruir la muestra.", isCorrect: true },
+            { id: "B", text: "Prueba de fuego directo quemando todas las fibras recuperadas para oler el humo.", isCorrect: false, wrongReason: "Quemar las fibras destruye de manera irreversible una evidencia irreemplazable sin ofrecer datos de cotejo espectral exacto." },
+            { id: "C", text: "Sumergir las fibras en ácido sulfúrico concentrado para ver si se disuelven.", isCorrect: false, wrongReason: "La disolución en ácidos destruye las microfibras imposibilitando cualquier posterior análisis o contraperitaje." },
+            { id: "D", text: "Pintar los cabellos con betún para zapatos para que tengan un tono uniforme.", isCorrect: false, wrongReason: "Pintar la evidencia altera su espectro de absorción y oculta la disposición de los pigmentos de melanina." }
+          ],
+          feedbackCorrect: "¡Correcto! La microscopía de luz polarizada y la microespectrofotometría permiten caracterizar la estructura interna, cutícula, médula y perfil espectral exacto del color de fibras y cabellos sin dañar el indicio, permitiendo un cotejo objetivo con prendas del sospechoso. +2 puntos."
+        },
+        {
+          phase: "Análisis de Refracción de Vidrio", instrumentEvaluated: "Método GRIM (Índice de Refracción)",
+          question: "El laboratorio recibe fragmentos milimétricos de vidrio del parabrisas (Escena 3) y diminutas partículas de vidrio extraídas del suéter del sospechoso. ¿Qué análisis físico-químico cuantitativo se debe solicitar para determinar si provienen del mismo cristal?",
+          options: [
+            { id: "A", text: "Determinación del Índice de Refracción por inmersión térmica (método GRIM - Glass Refractive Index Measurement) y análisis de densidad y dispersión óptica.", isCorrect: true },
+            { id: "B", text: "Frotar los vidrios fuertemente con una moneda de metal para ver cuál se raya más rápido.", isCorrect: false, wrongReason: "Rayar los vidrios con monedas produce fracturas incontroladas y carece de precisión matemática para cotejo forense." },
+            { id: "C", text: "Pegar los vidrios con silicona caliente para intentar armar el parabrisas completo.", isCorrect: false, wrongReason: "Las partículas microscópicas no pueden ensamblarse como un rompecabezas físico; requieren análisis de sus propiedades físico-químicas." },
+            { id: "D", text: "Pintar los vidrios con tinta china para medir si absorben la tinta de forma semejante.", isCorrect: false, wrongReason: "El vidrio es impermeable a tintas ordinarias y pintarlo enmascara sus propiedades ópticas de refracción." }
+          ],
+          feedbackCorrect: "¡Correcto! El método GRIM (Glass Refractive Index Measurement) cuantifica el índice de refracción del microvidrio con precisión de cinco decimales variando la temperatura de un aceite de inmersión calibrado; si coincide el índice y la densidad, la probabilidad de origen común es contundente. +2 puntos."
+        }
+      ]
+    }
+  ];
+
+  /* =========================================================================
+     CONTROLADOR INTERACTIVO Y AUDIO
+     ========================================================================= */
+  const state = {
+    currentScreen: 'portada',
+    currentStageIndex: 0,
+    currentQuestionIndex: 0,
+    totalScore: 0,
+    stageScores: { escena1: 0, escena2: 0, escena3: 0, laboratorio: 0 },
+    audioContext: null
+  };
+
+  function playTone(freq, duration, type = 'sine', gainVal = 0.12) {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!state.audioContext && AudioCtx) state.audioContext = new AudioCtx();
+      if (!state.audioContext) return;
+      if (state.audioContext.state === 'suspended') state.audioContext.resume();
+      const ctx = state.audioContext;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = type; osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      gain.gain.setValueAtTime(gainVal, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(); osc.stop(ctx.currentTime + duration);
+    } catch (e) {}
+  }
+
+  function showScreen(screenId) {
+    state.currentScreen = screenId;
+    ['viewPortada', 'viewQuestion', 'viewSceneResult', 'viewFinalDictamen'].forEach(id => {
+      document.getElementById(id).classList.remove('active');
+    });
+    if (screenId === 'portada') document.getElementById('viewPortada').classList.add('active');
+    if (screenId === 'question') document.getElementById('viewQuestion').classList.add('active');
+    if (screenId === 'sceneResult') document.getElementById('viewSceneResult').classList.add('active');
+    if (screenId === 'finalDictamen') document.getElementById('viewFinalDictamen').classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function renderQuestionScreen() {
+    const stage = GAME_STAGES[state.currentStageIndex];
+    const question = stage.questions[state.currentQuestionIndex];
+
+    document.getElementById('sceneBadgePill').textContent = stage.id === 'laboratorio' ? 'FASE 04: LABORATORIO' : `ESCENA ${stage.number}`;
+    document.getElementById('sceneTitleText').textContent = stage.title;
+    document.getElementById('sceneBriefingText').textContent = stage.briefing;
+    document.getElementById('qCurrentNumber').textContent = state.currentQuestionIndex + 1;
+    document.getElementById('qTotalNumber').textContent = stage.questions.length;
+
+    let badgesHTML = '';
+    stage.evidenceList.forEach((ev, idx) => {
+      badgesHTML += `<span class="evidence-tag-badge" onclick="inspectEvidence(${idx})"><strong>0${idx+1}</strong> ${ev.title} 🔍</span>`;
+    });
+
+    // Inserción de la ilustración SVG de alta definición
+    document.getElementById('sceneVisualBoard').innerHTML = `
+      <div class="scene-diagram-header">
+        <div style="color:var(--color-cyan); font-family:var(--font-mono); font-size:0.8rem;">
+          📡 <strong>CROQUIS TÁCTICO FORENSE:</strong> ${stage.location}
+        </div>
+        <div style="display:flex; gap:0.4rem;">
+          <button type="button" class="btn-vision-mode active" id="btnVisionNormal" onclick="setVisionMode('normal')">☀️ Normal</button>
+          <button type="button" class="btn-vision-mode uv-btn" id="btnVisionUV" onclick="setVisionMode('uv')">🔦 Luz UV (365nm)</button>
+        </div>
+      </div>
+      <div class="evidence-tags-strip">${badgesHTML}</div>
+      <div style="border-radius:6px; overflow:hidden; border:1px solid var(--border-forensic);">
+        ${SVG_SCENES[stage.svgKey]}
+      </div>
+      <div id="evidenceInspectCard" style="display:none; margin-top:0.6rem; background:#091325; border:1px solid var(--color-cyan); padding:0.6rem 0.9rem; border-radius:6px; font-size:0.85rem; color:var(--text-sub);"></div>
+    `;
+
+    document.getElementById('questionPhaseBadge').textContent = `${question.phase} • Instrumento: ${question.instrumentEvaluated}`;
+    document.getElementById('questionStatement').textContent = question.question;
+
+    const optContainer = document.getElementById('optionsContainer');
+    optContainer.innerHTML = '';
+    question.options.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'option-btn';
+      btn.dataset.optionId = opt.id;
+      btn.innerHTML = `<span class="option-letter">${opt.id}</span><span>${opt.text}</span>`;
+      btn.onclick = () => handleOptionSelected(opt.id);
+      optContainer.appendChild(btn);
+    });
+
+    document.getElementById('feedbackBox').classList.add('hidden');
+    const isLast = state.currentQuestionIndex === stage.questions.length - 1;
+    document.getElementById('btnNextQuestion').innerHTML = isLast ? 
+      (state.currentStageIndex === GAME_STAGES.length - 1 ? '<span>Ver Dictamen Final</span> ➔' : '<span>Ver Resultados de Escena</span> ➔') : 
+      '<span>Siguiente Pregunta</span> ➔';
+  }
+
+  function handleOptionSelected(selectedOptionId) {
+    const stage = GAME_STAGES[state.currentStageIndex];
+    const question = stage.questions[state.currentQuestionIndex];
+    const selectedOption = question.options.find(o => o.id === selectedOptionId);
+    const allBtns = document.querySelectorAll('.option-btn');
+    allBtns.forEach(b => b.disabled = true);
+
+    const feedbackBox = document.getElementById('feedbackBox');
+    feedbackBox.classList.remove('hidden', 'is-correct', 'is-wrong');
+
+    if (selectedOption.isCorrect) {
+      state.totalScore += 2;
+      state.stageScores[stage.id] += 2;
+      document.getElementById('currentScore').textContent = state.totalScore;
+      playTone(523, 0.15); setTimeout(() => playTone(659, 0.15), 80); setTimeout(() => playTone(784, 0.25), 160);
+      allBtns.forEach(b => { if (b.dataset.optionId === selectedOptionId) b.classList.add('selected-correct'); });
+      feedbackBox.classList.add('is-correct');
+      document.getElementById('feedbackStatusBadge').textContent = '¡RESPUESTA CORRECTA!';
+      document.getElementById('feedbackPointsTag').textContent = '+2 PUNTOS';
+      document.getElementById('feedbackBody').innerHTML = `<p><strong>Fundamento Técnico:</strong></p><p>${question.feedbackCorrect}</p>`;
+    } else {
+      playTone(160, 0.35, 'sawtooth');
+      allBtns.forEach(b => {
+        if (b.dataset.optionId === selectedOptionId) b.classList.add('selected-wrong');
+        if (question.options.find(o => o.id === b.dataset.optionId && o.isCorrect)) b.classList.add('revealed-correct');
+      });
+      feedbackBox.classList.add('is-wrong');
+      document.getElementById('feedbackStatusBadge').textContent = 'PROCEDIMIENTO INCORRECTO';
+      document.getElementById('feedbackPointsTag').textContent = '+0 PUNTOS';
+      document.getElementById('feedbackBody').innerHTML = `
+        <p><strong>¿Por qué es un error?</strong></p><p>${selectedOption.wrongReason}</p>
+        <p style="margin-top:0.6rem; color:#38bdf8;"><strong>Protocolo legal normativo:</strong> ${question.feedbackCorrect.replace('+2 puntos.', '')}</p>
+      `;
+    }
+  }
+
+  function handleNextQuestion() {
+    playTone(900, 0.04);
+    const stage = GAME_STAGES[state.currentStageIndex];
+    if (state.currentQuestionIndex < stage.questions.length - 1) {
+      state.currentQuestionIndex++;
+      renderQuestionScreen();
+    } else {
+      if (state.currentStageIndex === GAME_STAGES.length - 1) {
+        renderFinalDictamen();
+        showScreen('finalDictamen');
+      } else {
+        renderSceneResultScreen();
+        showScreen('sceneResult');
+      }
+    }
+  }
+
+  function renderSceneResultScreen() {
+    const stage = GAME_STAGES[state.currentStageIndex];
+    const pts = state.stageScores[stage.id];
+    document.getElementById('resultSceneName').textContent = `Resultado: ${stage.title}`;
+    document.getElementById('resultSummaryLead').textContent = `Inspección finalizada en ${stage.location}.`;
+    document.getElementById('sceneScoreObtained').textContent = pts;
+    document.getElementById('cumulativeScoreObtained').textContent = state.totalScore;
+
+    const checklist = document.getElementById('sceneEvidenceChecklist');
+    checklist.innerHTML = '';
+    stage.evidenceList.forEach(ev => {
+      const div = document.createElement('div');
+      div.style.background = "rgba(255,255,255,0.03)";
+      div.style.padding = "0.5rem 0.8rem";
+      div.style.borderRadius = "4px";
+      div.innerHTML = `<span style="color:var(--color-success); font-weight:800;">✓</span> <strong>${ev.title}:</strong> ${ev.desc}`;
+      checklist.appendChild(div);
+    });
+
+    document.getElementById('sceneLearningsBody').innerHTML = `<p>${stage.learnings}</p>`;
+    const nextStage = GAME_STAGES[state.currentStageIndex + 1];
+    if (nextStage) {
+      document.getElementById('btnNextSceneText').textContent = nextStage.id === 'laboratorio' ? 'Proceder al Laboratorio Central' : `Proceder a ${nextStage.title}`;
+    }
+  }
+
+  function renderFinalDictamen() {
+    const score = state.totalScore;
+    document.getElementById('finalTotalScore').textContent = score;
+    document.getElementById('finalPercentage').textContent = `${Math.round((score/40)*100)}% EFICACIA PROBATORIA`;
+
+    if (score >= 36) {
+      document.getElementById('finalRankName').textContent = 'PERITO FORENSE JEFE DE ESCENA';
+      document.getElementById('finalRankDesc').textContent = 'Sobresaliente. Dominio de excelencia en inspección técnica, fijación métrica, embalaje reglamentario y cadena de custodia.';
+    } else if (score >= 28) {
+      document.getElementById('finalRankName').textContent = 'PERITO ESPECIALISTA EN CRIMINALÍSTICA';
+      document.getElementById('finalRankDesc').textContent = 'Muy buen desempeño táctico con mínimas observaciones subsanables.';
+    } else {
+      document.getElementById('finalRankName').textContent = 'TÉCNICO EN FORMACIÓN FORENSE';
+      document.getElementById('finalRankDesc').textContent = 'Aprobado. Se requiere reforzar los protocolos de selección de embalajes (papel vs plástico).';
+    }
+
+    const instGrid = document.getElementById('finalInstrumentCardsGrid');
+    instGrid.innerHTML = '';
+    FORENSIC_INSTRUMENTS.forEach(inst => {
+      const card = document.createElement('div');
+      card.className = 'inst-card';
+      card.innerHTML = `
+        <div style="display:flex; justify-content:space-between; margin-bottom:0.3rem;">
+          <span>${inst.icon} <strong>${inst.name}</strong></span>
+          <span class="card-tag" style="margin:0;">${inst.badge}</span>
+        </div>
+        <div style="font-size:0.82rem; color:var(--text-sub);">${inst.purpose}</div>
+      `;
+      instGrid.appendChild(card);
+    });
+  }
+
+  // Modo Visión Normal vs UV
+  function setVisionMode(mode) {
+    const board = document.getElementById('sceneVisualBoard');
+    const btnNorm = document.getElementById('btnVisionNormal');
+    const btnUV = document.getElementById('btnVisionUV');
+    if (!board) return;
+    if (mode === 'uv') {
+      board.classList.add('uv-active');
+      if (btnNorm) btnNorm.classList.remove('active');
+      if (btnUV) btnUV.classList.add('active');
+      playTone(600, 0.08, 'triangle');
+    } else {
+      board.classList.remove('uv-active');
+      if (btnUV) btnUV.classList.remove('active');
+      if (btnNorm) btnNorm.classList.add('active');
+      playTone(850, 0.05, 'sine');
+    }
+  }
+
+  // Lupa de inspección
+  function inspectEvidence(idx) {
+    const stage = GAME_STAGES[state.currentStageIndex];
+    const ev = stage.evidenceList[idx];
+    const card = document.getElementById('evidenceInspectCard');
+    if (!ev || !card) return;
+    card.style.display = 'block';
+    card.innerHTML = `🔎 <strong style="color:var(--color-yellow-bright);">INDICIO [0${idx+1}] - ${ev.title}:</strong> ${ev.desc}`;
+    playTone(1000, 0.05, 'triangle');
+  }
+
+  // Event Listeners
+  document.getElementById('btnComenzarHero').onclick = () => {
+    state.currentStageIndex = 0; state.currentQuestionIndex = 0;
+    renderQuestionScreen(); showScreen('question');
+  };
+  document.getElementById('btnNextQuestion').onclick = handleNextQuestion;
+  document.getElementById('btnNextScene').onclick = () => {
+    state.currentStageIndex++; state.currentQuestionIndex = 0;
+    renderQuestionScreen(); showScreen('question');
+  };
+  document.getElementById('btnRetryScene').onclick = () => {
+    const stId = GAME_STAGES[state.currentStageIndex].id;
+    state.totalScore -= state.stageScores[stId]; state.stageScores[stId] = 0;
+    document.getElementById('currentScore').textContent = state.totalScore;
+    state.currentQuestionIndex = 0; renderQuestionScreen(); showScreen('question');
+  };
+  document.getElementById('btnRestartGame').onclick = () => {
+    state.totalScore = 0; state.stageScores = { escena1: 0, escena2: 0, escena3: 0, laboratorio: 0 };
+    document.getElementById('currentScore').textContent = 0; showScreen('portada');
+  };
+
+  // Modal Maletín
+  document.getElementById('btnOpenKitModal').onclick = () => {
+    const list = document.getElementById('modalInstrumentsList');
+    list.innerHTML = '';
+    FORENSIC_INSTRUMENTS.forEach(inst => {
+      const card = document.createElement('div');
+      card.className = 'inst-card';
+      card.innerHTML = `
+        <div style="display:flex; justify-content:space-between; margin-bottom:0.3rem;">
+          <span>${inst.icon} <strong>${inst.name}</strong></span>
+          <span class="card-tag" style="margin:0;">${inst.badge}</span>
+        </div>
+        <div style="font-size:0.85rem; color:var(--text-sub);">${inst.purpose}</div>
+        <div style="font-size:0.75rem; color:var(--color-yellow-bright); margin-top:0.3rem;"><strong>Preservación:</strong> ${inst.packingType}</div>
+      `;
+      list.appendChild(card);
+    });
+    document.getElementById('kitModalOverlay').classList.remove('hidden');
+  };
+  document.getElementById('btnCloseKitModal').onclick = () => {
+    document.getElementById('kitModalOverlay').classList.add('hidden');
+  };
+
+  showScreen('portada');
+  </script>
+</body>
+</html>
