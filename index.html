@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1483,7 +1484,7 @@ body.forensic-theme {
       <div class="chat-avatar">🤖</div>
       <div class="chat-header-info">
         <div class="chat-header-name">Dr. Forense AI</div>
-        <div class="chat-header-status">En línea • Basado en el Manual Único</div>
+        <div class="chat-header-status">En línea • Proactivo • Manual Único</div>
       </div>
       <button type="button" class="chat-close" id="chatClose">&times;</button>
     </div>
@@ -1495,6 +1496,8 @@ body.forensic-theme {
       <button type="button" class="chat-quick-btn" data-action="explicar">📚 Explícame</button>
       <button type="button" class="chat-quick-btn" data-action="instrumento">🧰 Instrumento</button>
       <button type="button" class="chat-quick-btn" data-action="fase">📋 Fase actual</button>
+      <button type="button" class="chat-quick-btn" data-action="analizar">🔍 Analizar</button>
+      <button type="button" class="chat-quick-btn" data-action="opciones">📖 Opciones</button>
     </div>
 
     <div class="chat-input-bar">
@@ -2444,74 +2447,95 @@ document.getElementById('btnCloseKitModal').onclick = () => {
 };
 
 /* =========================================================================
-   CHATBOT FORENSE BASADO EN EL MANUAL ÚNICO
+   CHATBOT FORENSE PROACTIVO (INTEGRADO Y CORREGIDO)
+   - Mantiene chatHandleExplain y chatHandleInstrument
+   - Timers proactivos: pista a los 20s, advertencia a los 40s
+   - Respuesta correcta tras 2 fallos
+   - No reabre el chat si el usuario lo cerró manualmente
+   - Botones nuevos: Analizar / Opciones
    ========================================================================= */
+
+// ---------- BASE DE CONOCIMIENTO AMPLIADA ----------
 const CHATBOT_KB = {
-  "manual": "El **Manual Único de Cadena de Custodia de Evidencias Físicas** (2017) es el instrumento normativo que regula los procesos, procedimientos, métodos y técnicas de la cadena de custodia en Venezuela. Está estructurado en **4 FASES**: Inicial, Laboratorio, Disposición Judicial y Disposición Final. Y en **4 FORMAS DE OBTENCIÓN**: Técnica, Aseguramiento, Consignación y Derivación.",
-  "fase inicial": "La **FASE INICIAL** es la fase génesis del sistema. Comprende el PROCESO DE OBTENCIÓN en 4 formas: Técnica (trabajo de campo planificado), Aseguramiento (flagrancia o riesgo), Consignación (particular entrega) y Derivación (nueva evidencia de una peritación previa). Se aplican los 7 procedimientos: Protección, Observación Preliminar, Fijación, Colección, Embalaje y Rotulación, Registro en PRCC y Traslado.",
-  "fase de laboratorio": "La **FASE DE LABORATORIO** es la fase intermedia del sistema. Comprende el PROCESO DE PERITACIÓN con 4 procedimientos: Recepción, Designación, Peritaje y Remisión. En el peritaje el forense aplica: Valoración → Descripción → Análisis → Interpretación → Conclusión → Dictamen Pericial.",
-  "fase de disposicion judicial": "La **FASE DE DISPOSICIÓN JUDICIAL** es el momento en que la evidencia pasa a disposición del Poder Judicial una vez admitida la acusación. Comprende el Proceso de Resguardo Judicial y el Proceso de Exhibición en audiencia, aplicando el traslado y la transferencia.",
-  "fase de disposicion final": "La **FASE DE DISPOSICIÓN FINAL** es la fase que pone fin al tratamiento de las evidencias. Comprende el PROCESO DE CIERRE con 4 formas: Devolución, Entrega, Destrucción y Consumida en Peritaje. Se ejecuta y se cierra la PRCC.",
-  "obtencion tecnica": "La **OBTENCIÓN TÉCNICA** es el trabajo de campo planificado y metódico. Se ejecuta en 7 procedimientos secuenciales: 1) PROTECCIÓN (delimitar y preservar), 2) OBSERVACIÓN PRELIMINAR (planificar y buscar), 3) FIJACIÓN (escrita, fotográfica y planimétrica obligatorias; videográfica optativa), 4) COLECCIÓN (macerado, impregnación, levantamiento directo, moldeado, etc.), 5) EMBALAJE Y ROTULACIÓN, 6) REGISTRO EN PRCC y 7) TRASLADO.",
-  "obtencion por aseguramiento": "La **OBTENCIÓN POR ASEGURAMIENTO** se aplica en flagrancia o cuando la evidencia observada está en peligro inminente de modificación. Procedimientos: Búsqueda → Posesión → Fijación → Embalaje y Rotulación → Registro en PRCC → Traslado. Genera Acta de Obtención por Aseguramiento.",
-  "obtencion por consignacion": "La **OBTENCIÓN POR CONSIGNACIÓN** ocurre cuando un particular entrega voluntariamente una evidencia al funcionario. Escenarios: Directa/Indirecta, Primaria/Secundaria. Procedimientos: Recepción → Fijación (escrita y fotográfica mínimo) → Embalaje y Rotulación → PRCC → Traslado.",
-  "obtencion por derivacion": "La **OBTENCIÓN POR DERIVACIÓN** se genera cuando surge una nueva evidencia de una peritación previa (Por Separación o Por Segmentación) o por selección de evidencias previamente colectadas. Se registra en nueva PRCC y Anexo B.",
-  "prcc": "La **PRCC (Planilla de Registro de Cadena de Custodia)** es el documento oficial obligatorio que acompaña SIEMPRE a la evidencia en ORIGINAL desde su obtención hasta la disposición final. Contiene: Datos Generales, Formas de Obtención, Operarios (Fijación y Colección con firma y huella del pulgar derecho), Descripción de la Evidencia, Transferencia (entrega/recibe), Observaciones y Anexos A (continuidad) y B (derivación).",
-  "fijacion": "La **FIJACIÓN** es el tercer procedimiento de la Obtención Técnica. Son OBLIGATORIAS: escrita, fotográfica y planimétrica. La videográfica es OPTATIVA. La fotográfica tiene 3 tipos: GENERAL (sin señalizadores), PARTICULAR (con señalizadores alfanuméricos) y EN DETALLE (con testigo flecha y testigo métrico).",
-  "cadena": "La **CADENA DE CUSTODIA** según el Art. 187 del COPP 2021 es 'la garantía legal que permite el manejo idóneo de las evidencias digitales, físicas o materiales, con el objeto de evitar su modificación, alteración o contaminación desde el momento de su ubicación en el sitio del suceso o lugar del hallazgo, su trayectoria por las distintas dependencias de investigaciones penales, criminalísticas y forenses, la consignación de los resultados a la autoridad competente, hasta la culminación del proceso'.",
-  "articulo 187": "El **Art. 187 del COPP 2021** regula la Cadena de Custodia. Establece que todo funcionario que colecte evidencias físicas debe cumplirla, comprendiendo los pasos de: protección, fijación, colección, embalaje, rotulado, etiquetado, preservación y traslado. Los procedimientos están regulados por el Manual Único.",
-  "articulo 200": "El **Art. 200 del COPP 2021** regula el Levantamiento e Identificación de Cadáveres. En caso de muerte violenta, ANTES de la inhumación, la policía de investigaciones penales auxiliada por el médico forense realizará: inspección corporal preliminar, descripción de la posición y ubicación del cuerpo, evaluación del carácter de las heridas y los reconocimientos pertinentes.",
-  "articulo 201": "El **Art. 201 del COPP 2021** regula la Muerte en Accidentes de Tránsito. Un oficial del Servicio de Control y Vigilancia de Tránsito Terrestre de la PNB, auxiliado por el médico forense, puede realizar el levantamiento del cadáver y traslado a la morgue cuando los representantes del Ministerio Público no puedan hacerse presentes.",
-  "articulo 223": "El **Art. 223 del COPP 2021** establece que el Ministerio Público realizará u ordenará la práctica de experticias cuando para el examen de una persona u objeto, o para descubrir o valorar un elemento de convicción, se requieran conocimientos o habilidades especiales en alguna ciencia, arte u oficio.",
-  "coleccion": "El **PROCEDIMIENTO DE COLECCIÓN** del Manual Único contempla las técnicas: Levantamiento directo (pinzas), Estarcimiento (cinta), Aspirado/Barrido, Macerado (hisopos, gasas), Raspado (bisturí), Impregnación (hisopos), Reproducción Fotográfica, Reproducción por Moldeado (yeso), Reproducción Digital, Electrostática, Adherencia, Trasegado, Imantación, Tamizado.",
-  "reproduccion": "La **COLECCIÓN POR REPRODUCCIÓN** se usa cuando la evidencia NO es transportable: cráteres de explosiones, huellas negativas, huellas de mordida, etc. Se clasifica en: Fotográfica, por Moldeado (yeso dental, escayola) y Digital. El molde resultante ES EVIDENCIA y requiere su propia PRCC.",
-  "embalaje": "El **PROCEDIMIENTO DE EMBALAJE Y ROTULACIÓN** exige: un envoltorio por evidencia, material acorde a la naturaleza (papel transpirable para biológicos, plástico para secos no biológicos), PRECINTADO obligatorio y ROTULACIÓN con: oficina que instruye, N° expediente, N° PRCC, correlación alfanumérica, descripción, lugar de colección y observaciones.",
-  "adn": "El **ADN** se obtiene de muestras biológicas (sangre, saliva, semen, cabellos con bulbo). Se analiza por **PCR + marcadores STR**. Su poder de discriminación es mayor a 1 en mil millones. Se enmarca dentro del PROCEDIMIENTO DE PERITAJE de la FASE DE LABORATORIO.",
-  "vidrio": "El **método GRIM** (Glass Refractive Index Measurement) mide el índice de refracción del vidrio con precisión de 5 decimales. Si dos fragmentos coinciden en índice y densidad, la probabilidad de origen común es contundente.",
-  "balistica": "La **balística comparativa** usa microscopio de comparación para cotejar microestrías del ánima del cañón en el proyectil y marcas del percutor en la vaina. Cada arma deja una 'firma' única e irrepetible. Se realiza en el PROCEDIMIENTO DE PERITAJE.",
-  "huella": "Las **huellas latentes** se revelan con polvo dactiloscópico (magnético o volcánico) sobre superficies lisas no porosas. Se trasplantan con cinta a tarjeta de contraste y se cotejan en el sistema **AFIS** por puntos característicos (minucias).",
-  "yeso": "Para huellas de calzado en barro se usa **vaciado en yeso dental o escayola forense**. Primero se fotografía con testigo métrico a 90°, luego se construye un marco de contención y se vierte el yeso. Nunca se pisa la huella. Es COLECCIÓN POR REPRODUCCIÓN.",
-  "epo": "El **Equipo de Protección Personal (EPP)** incluye guantes de nitrilo, mascarilla, bata, gorro y botas. Evita que el perito transfiera ADN, sudor o células al sitio y lo protege contra patógenos. Es obligatorio en todos los procedimientos del Manual."
+  "manual": "El **Manual Único de Cadena de Custodia de Evidencias Físicas** (2017) regula los procesos, procedimientos, métodos y técnicas de la cadena de custodia en Venezuela. Estructurado en **4 FASES**: Inicial, Laboratorio, Disposición Judicial y Disposición Final. Y en **4 FORMAS DE OBTENCIÓN**: Técnica, Aseguramiento, Consignación y Derivación.",
+  "fase inicial": "La **FASE INICIAL** comprende el PROCESO DE OBTENCIÓN en 4 formas: Técnica, Aseguramiento, Consignación y Derivación. Se aplican 7 procedimientos: Protección, Observación Preliminar, Fijación, Colección, Embalaje y Rotulación, Registro en PRCC y Traslado.",
+  "fase de laboratorio": "La **FASE DE LABORATORIO** comprende el PROCESO DE PERITACIÓN con 4 procedimientos: Recepción, Designación, Peritaje y Remisión. En el peritaje: Valoración → Descripción → Análisis → Interpretación → Conclusión → Dictamen Pericial.",
+  "fase de disposicion judicial": "La **FASE DE DISPOSICIÓN JUDICIAL** comprende el Resguardo Judicial y el Proceso de Exhibición en audiencia.",
+  "fase de disposicion final": "La **FASE DE DISPOSICIÓN FINAL** comprende el PROCESO DE CIERRE con 4 formas: Devolución, Entrega, Destrucción y Consumida en Peritaje.",
+  "obtencion tecnica": "La **OBTENCIÓN TÉCNICA** tiene 7 procedimientos secuenciales: 1) Protección, 2) Observación Preliminar, 3) Fijación, 4) Colección, 5) Embalaje y Rotulación, 6) Registro en PRCC y 7) Traslado.",
+  "obtencion aseguramiento": "La **OBTENCIÓN POR ASEGURAMIENTO** se aplica en flagrancia o riesgo inminente. Procedimientos: Búsqueda, Posesión, Fijación, Embalaje, PRCC y Traslado.",
+  "obtencion consignacion": "La **OBTENCIÓN POR CONSIGNACIÓN** ocurre cuando un particular entrega la evidencia al funcionario. Genera Acta de Obtención por Consignación.",
+  "obtencion derivacion": "La **OBTENCIÓN POR DERIVACIÓN** surge de una peritación previa (por separación o segmentación) o por selección. Se registra en nueva PRCC y Anexo B.",
+  "prcc": "La **PRCC** (Planilla de Registro de Cadena de Custodia) es el documento oficial obligatorio que acompaña la evidencia en ORIGINAL. Contiene: Datos Generales, Formas de Obtención, Operarios (firma y huella del pulgar derecho), Descripción, Transferencias y Anexos A y B.",
+  "fijacion": "La **FIJACIÓN** tiene 3 tipos OBLIGATORIOS: escrita, fotográfica y planimétrica. La videográfica es OPTATIVA. La fotográfica tiene 3 tipos: general (sin señalizadores), particular (con alfanuméricos) y en detalle (con testigo flecha y testigo métrico).",
+  "cadena": "La **CADENA DE CUSTODIA** según el Art. 187 COPP 2021 es la garantía legal del manejo idóneo de las evidencias para evitar modificación, alteración o contaminación desde su ubicación hasta la culminación del proceso.",
+  "articulo 187": "El **Art. 187 COPP 2021** regula la Cadena de Custodia: protección, fijación, colección, embalaje, rotulado, etiquetado, preservación y traslado.",
+  "articulo 200": "El **Art. 200 COPP 2021** regula el Levantamiento e Identificación de Cadáveres: inspección corporal preliminar, descripción de la posición, evaluación de heridas y reconocimientos, antes de la inhumación.",
+  "articulo 201": "El **Art. 201 COPP 2021** regula la Muerte en Accidentes de Tránsito: un oficial del Servicio de Tránsito de la PNB, auxiliado por el médico forense, puede realizar el levantamiento si el MP no está presente.",
+  "articulo 223": "El **Art. 223 COPP 2021** ordena experticias cuando se requieran conocimientos especiales en alguna ciencia, arte u oficio.",
+  "coleccion": "Las técnicas de **COLECCIÓN** son: Levantamiento directo, Estarcimiento, Aspirado/Barrido, Macerado, Raspado, Impregnación, Reproducción Fotográfica, Moldeado, Digital, Electrostática, Adherencia, Trasegado, Imantación y Tamizado.",
+  "reproduccion": "La **COLECCIÓN POR REPRODUCCIÓN** se usa para evidencias NO transportables. Se clasifica en Fotográfica, Moldeado y Digital. El molde resultante ES EVIDENCIA y requiere PRCC.",
+  "embalaje": "El **EMBALAJE** exige: un envoltorio por evidencia, material acorde (papel para biológicos, plástico para secos no biológicos), PRECINTADO obligatorio y ROTULACIÓN con los datos exigidos.",
+  "adn": "El **ADN** se analiza por PCR + marcadores STR. Poder de discriminación mayor a 1 en mil millones. Se enmarca en el PROCEDIMIENTO DE PERITAJE.",
+  "vidrio": "El **método GRIM** mide el índice de refracción del vidrio con precisión de 5 decimales. Si coincide índice y densidad, la probabilidad de origen común es contundente.",
+  "balistica": "La **balística comparativa** usa microscopio de comparación para cotejar microestrías del ánima del cañón en el proyectil y marcas del percutor en la vaina.",
+  "huella": "Las **huellas latentes** se revelan con polvo dactiloscópico sobre superficies no porosas. Se cotejan en AFIS por puntos característicos (minucias).",
+  "yeso": "Para huellas de calzado en barro se usa **vaciado con yeso dental o escayola forense**. Es COLECCIÓN POR REPRODUCCIÓN.",
+  "guantes": "Los **guantes de nitrilo** son parte del EPP obligatorio. Evitan transferir ADN y protegen contra patógenos.",
+  "acordonar": "El **acordonamiento** delimita el perímetro para evitar modificación. Es la actividad de DELIMITACIÓN del Procedimiento de Protección.",
+  "error": "Los errores más comunes: recolectar sin acordonar, tocar sin guantes, embalar biológicos húmedos en plástico, olvidar la PRCC, no registrar transferencias, mover antes de fijar."
 };
 
 const CHATBOT_HINTS = {
   escena1: [
     "El primer procedimiento del Manual es la PROTECCIÓN. ¿Ya delimitaste y preservaste el sitio?",
-    "El sitio es CERRADO. ¿Qué patrón de búsqueda cubre todo el suelo sin dejar zonas ciegas? El Manual contempla cuadrante, zigzag, lineal, espiral, concéntrico.",
-    "Antes de levantar la huella, ¿ya fijaste? Recuerda: escrita, fotográfica y planimétrica son OBLIGATORIAS según el Manual.",
+    "El sitio es CERRADO. ¿Qué patrón de búsqueda cubre todo el suelo sin zonas ciegas? El Manual contempla cuadrante, zigzag, lineal, espiral, concéntrico.",
+    "Antes de levantar la huella, ¿ya fijaste? Escrita, fotográfica y planimétrica son OBLIGATORIAS.",
     "La sangre seca no se raspa. Se rehidrata. ¿Qué técnica del Manual usa hisopo estéril humedecido con solución salina?",
     "El hisopo con biológico NUNCA va en plástico. ¿Qué envoltorio transpirable exige el Manual?"
   ],
   escena2: [
     "El parque es sitio ABIERTO. ¿Qué regla del Manual aplica sobre las distancias del perímetro?",
     "En muerte violenta, el Art. 200 COPP exige inspección corporal preliminar ANTES de la inhumación. ¿Quién la auxilia?",
-    "La huella en barro es NO transportable. ¿Qué técnica del Manual se usa para evidencias no transportables?",
+    "La huella en barro es NO transportable. ¿Qué técnica del Manual se usa?",
     "Los cabellos tienen bulbo. ¿Qué técnica del Manual permite levantarlos sin dañar la raíz?",
-    "El Manual exige un envoltorio por evidencia. ¿Qué sobre se usa para microindicios como pelos?"
+    "El Manual exige un envoltorio por evidencia. ¿Qué sobre se usa para microindicios?"
   ],
   escena3: [
-    "El Art. 201 COPP regula el levantamiento en accidentes de tránsito. ¿Quién puede realizarlo si el MP no está presente?",
-    "El Manual contempla el uso de instrumentos especializados en la Observación Preliminar. ¿Qué luz detecta fluidos y fibras invisibles?",
-    "Los vidrios secos no biológicos van en envoltorio plástico grueso o contenedor rígido. ¿Qué técnica del Manual usa pinzas estériles?",
-    "La botella es evidencia mixta: toxicológica Y dactiloscópica. ¿Cómo se asegura según el Manual?",
-    "El Art. 187 COPP 2021 define la cadena de custodia. ¿Qué documento del Manual acompaña siempre a la evidencia en original?"
+    "El Art. 201 COPP regula el levantamiento en accidentes de tránsito. ¿Quién puede realizarlo si el MP no está?",
+    "El Manual contempla instrumentos especializados en la Observación Preliminar. ¿Qué luz detecta fluidos invisibles?",
+    "Los vidrios secos no biológicos van en envoltorio plástico grueso. ¿Qué técnica usa pinzas estériles?",
+    "La botella es evidencia mixta. ¿Cómo se asegura según el Manual?",
+    "El Art. 187 COPP 2021 define la cadena de custodia. ¿Qué documento del Manual acompaña siempre la evidencia?"
   ],
   laboratorio: [
     "El PROCEDIMIENTO DE RECEPCIÓN exige verificar documentos, precintos y características. ¿Ya lo hiciste?",
-    "El PROCEDIMIENTO DE PERITAJE se ejecuta en 6 pasos: Valorar, Describir, Analizar, Interpretar, Concluir y Dictamen. ¿Qué análisis pides para muestras biológicas?",
-    "Para dactiloscopia el Manual contempla la comparación de puntos característicos. ¿En qué sistema biométrico se busca?",
-    "La balística comparativa usa microscopio de comparación. ¿Qué evidencia de la escena se coteja?",
-    "El vidrio se identifica por su índice de refracción. ¿Cómo se llama el método del Manual?"
+    "El PROCEDIMIENTO DE PERITAJE se ejecuta en 6 pasos. ¿Qué análisis pides para muestras biológicas?",
+    "Para dactiloscopia el Manual contempla la comparación de puntos característicos. ¿En qué sistema se busca?",
+    "La balística comparativa usa microscopio de comparación. ¿Qué evidencia se coteja?",
+    "El vidrio se identifica por su índice de refracción. ¿Cómo se llama el método?"
   ]
 };
 
 const CHATBOT_GREETINGS = [
-  "¡Hola, perito! Soy el **Dr. Forense AI**, basado en el **Manual Único de Cadena de Custodia (2017)** y el **COPP 2021**. Puedo darte pistas, explicarte procedimientos o responder dudas. ¿Por dónde empezamos?",
-  "Bienvenido al laboratorio de campo. Estoy aquí para guiarte según el Manual Único. Pregúntame sobre las 4 fases, las 4 formas de obtención, los 7 procedimientos o los artículos del COPP."
+  "¡Hola, perito! Soy el **Dr. Forense AI**. Estaré atento: si demoras más de **20 segundos** te daré una pista, y si fallas **2 veces** te mostraré la respuesta correcta. No tienes que presionar nada. 🕵️",
+  "Bienvenido. Estoy aquí para **ayudarte sin que pidas ayuda**: si tardas, te doy pistas; si fallas, te explico. Empecemos. 👮‍♂️"
 ];
 
-const state_chat = { open: false, hintIndex: {}, greeted: false };
+// ---------- ESTADO DEL CHAT ----------
+const state_chat = {
+  open: false,
+  hintIndex: {},
+  greeted: false,
+  timerId: null,
+  warningTimerId: null,
+  wrongCount: 0,
+  hintCount: 0,
+  lastQuestionKey: null,
+  userClosedManually: false
+};
 
+// ---------- MENSAJES ----------
 function chatAddMessage(text, type = 'bot') {
   const body = document.getElementById('chatBody');
   const msg = document.createElement('div');
@@ -2523,6 +2547,7 @@ function chatAddMessage(text, type = 'bot') {
 
 function chatShowTyping() {
   const body = document.getElementById('chatBody');
+  if (document.getElementById('chatTyping')) return;
   const typing = document.createElement('div');
   typing.className = 'chat-msg typing';
   typing.id = 'chatTyping';
@@ -2536,14 +2561,19 @@ function chatHideTyping() {
   if (t) t.remove();
 }
 
-function chatBotReply(text, type = 'bot', delay = 700) {
+function chatBotReply(text, type = 'bot', delay = 400) {
   chatShowTyping();
   setTimeout(() => {
     chatHideTyping();
     chatAddMessage(text, type);
+    if (!state_chat.open && !state_chat.userClosedManually) {
+      document.getElementById('chatWindow').classList.add('open');
+      state_chat.open = true;
+    }
   }, delay);
 }
 
+// ---------- CONTEXTO ----------
 function chatGetCurrentContext() {
   if (state.currentScreen === 'portada') return { stage: null, question: null };
   const stage = GAME_STAGES[state.currentStageIndex];
@@ -2551,22 +2581,157 @@ function chatGetCurrentContext() {
   return { stage, question };
 }
 
+function getCurrentQuestionKey() {
+  const { stage } = chatGetCurrentContext();
+  if (!stage) return null;
+  return `${stage.id}-${state.currentQuestionIndex}-${state.currentScreen}`;
+}
+
+// ---------- BÚSQUEDA EN KB ----------
+function buscarEnKB(userInput) {
+  const input = userInput.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[¿?¡!.,;:]/g, ' ');
+  const palabrasClave = input.split(/\s+/).filter(p => p.length > 2);
+  let mejorCoincidencia = null;
+  let mejorPuntaje = 0;
+  Object.keys(CHATBOT_KB).forEach(key => {
+    const keyNorm = key.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    let puntaje = 0;
+    if (input.includes(keyNorm)) puntaje += 10;
+    palabrasClave.forEach(palabra => {
+      if (keyNorm.includes(palabra) || palabra.includes(keyNorm)) puntaje += 3;
+    });
+    if (puntaje > mejorPuntaje) { mejorPuntaje = puntaje; mejorCoincidencia = key; }
+  });
+  return mejorPuntaje >= 3 ? mejorCoincidencia : null;
+}
+
+// ---------- PISTAS PROGRESIVAS ----------
+function darPistaAutomatica() {
+  const { stage } = chatGetCurrentContext();
+  if (!stage) return;
+  const hints = CHATBOT_HINTS[stage.id] || [];
+  if (!state_chat.hintIndex[stage.id]) state_chat.hintIndex[stage.id] = 0;
+  const idx = state_chat.hintIndex[stage.id];
+  if (idx >= hints.length) {
+    chatBotReply("Ya te di todas mis pistas. Confía en tu criterio pericial. 🔍", 'tip');
+    return;
+  }
+  state_chat.hintCount++;
+  const prefix = state_chat.hintCount === 1 ? "⏱️ **Veo que estás dudando...**" : "⏱️ **Sigo esperando...**";
+  chatBotReply(`${prefix}<br><br><strong>💡 Pista ${idx + 1}/${hints.length}:</strong><br>${hints[idx]}`, 'tip');
+  state_chat.hintIndex[stage.id]++;
+}
+
+// ---------- TIMERS ----------
+function iniciarTimerPregunta() {
+  cancelarTimers();
+  const key = getCurrentQuestionKey();
+  if (!key) return;
+  state_chat.lastQuestionKey = key;
+  state_chat.wrongCount = 0;
+
+  state_chat.timerId = setTimeout(() => {
+    if (state.currentScreen === 'question' && getCurrentQuestionKey() === key) {
+      darPistaAutomatica();
+    }
+  }, 20000);
+
+  state_chat.warningTimerId = setTimeout(() => {
+    if (state.currentScreen === 'question' && getCurrentQuestionKey() === key) {
+      chatBotReply(
+        "⚠️ **Llevas 40 segundos sin responder.**<br><br>" +
+        "Recuerda: en criminalística, el **orden** es tan importante como la **elección**. " +
+        "Pregúntate: ¿qué procedimiento del Manual se aplica primero en esta fase?<br><br>" +
+        "Si quieres, escribe **\"analiza la pregunta\"** y te digo la respuesta.",
+        'tip'
+      );
+    }
+  }, 40000);
+}
+
+function cancelarTimers() {
+  if (state_chat.timerId) { clearTimeout(state_chat.timerId); state_chat.timerId = null; }
+  if (state_chat.warningTimerId) { clearTimeout(state_chat.warningTimerId); state_chat.warningTimerId = null; }
+}
+
+// ---------- ANÁLISIS ----------
+function chatAnalizarPreguntaActual() {
+  const { stage, question } = chatGetCurrentContext();
+  if (!stage || !question) {
+    chatBotReply("Primero debes estar dentro de una pregunta del juego. Ve a alguna escena.");
+    return;
+  }
+  const opcionCorrecta = question.options.find(o => o.isCorrect);
+  chatBotReply(
+    `<strong>📋 ANÁLISIS DE LA PREGUNTA</strong><br><br>` +
+    `<strong>Escena:</strong> ${stage.title}<br>` +
+    `<strong>Fase:</strong> ${question.phase}<br><br>` +
+    `<strong>✅ Respuesta correcta:</strong><br>` +
+    `Opción ${opcionCorrecta.id}: "${opcionCorrecta.text}"<br><br>` +
+    `<strong>📖 Fundamento:</strong><br>` +
+    `${question.feedbackCorrect.replace('+2 puntos.', '').trim()}`,
+    'tip', 800
+  );
+}
+
+function chatExplicarOpciones() {
+  const { question } = chatGetCurrentContext();
+  if (!question) {
+    chatBotReply("Ve a una pregunta del juego para que pueda explicarte las 4 opciones.");
+    return;
+  }
+  let respuesta = `<strong>🔍 EXPLICACIÓN DE LAS 4 OPCIONES</strong><br><br>`;
+  question.options.forEach(opt => {
+    if (opt.isCorrect) {
+      respuesta += `<strong style="color:#10b981;">✅ ${opt.id} (CORRECTA):</strong><br>${opt.text}<br><br>`;
+    } else {
+      respuesta += `<strong style="color:#ef4444;">❌ ${opt.id} (INCORRECTA):</strong><br>${opt.text}<br><em style="color:#fca5a5;">→ ${opt.wrongReason}</em><br><br>`;
+    }
+  });
+  chatBotReply(respuesta, 'tip', 900);
+}
+
 function chatHandleHint() {
   const { stage } = chatGetCurrentContext();
   if (!stage) {
-    chatBotReply("Aún no has comenzado el caso. Pulsa **🚨 Comenzar** y te acompañaré durante toda la investigación con base en el Manual Único.");
+    chatBotReply("Aún no has comenzado el caso. Pulsa **🚨 Comenzar** y te acompañaré con base en el Manual Único.");
     return;
   }
-  const stageId = stage.id;
-  if (!state_chat.hintIndex[stageId]) state_chat.hintIndex[stageId] = 0;
-  const hints = CHATBOT_HINTS[stageId] || [];
-  const idx = state_chat.hintIndex[stageId];
+  const hints = CHATBOT_HINTS[stage.id] || [];
+  if (!state_chat.hintIndex[stage.id]) state_chat.hintIndex[stage.id] = 0;
+  const idx = state_chat.hintIndex[stage.id];
   if (idx >= hints.length) {
-    chatBotReply("Ya te di todas mis pistas para esta escena. Confía en tu criterio pericial y revisa los fundamentos del Manual. 🔍", 'tip');
+    chatBotReply("Ya te di todas mis pistas para esta escena. Confía en tu criterio pericial. 🔍", 'tip');
     return;
   }
-  chatBotReply(`<strong>Pista ${idx + 1}/${hints.length}:</strong><br>${hints[idx]}`, 'tip');
-  state_chat.hintIndex[stageId]++;
+  chatBotReply(`<strong>💡 Pista ${idx + 1}/${hints.length}:</strong><br>${hints[idx]}`, 'tip');
+  state_chat.hintIndex[stage.id]++;
+}
+
+function chatHandleFase() {
+  const { stage, question } = chatGetCurrentContext();
+  if (!stage) {
+    chatBotReply(
+      "Estás en la portada. El Manual Único tiene **4 fases**:<br>" +
+      "• 🔵 Fase Inicial — Obtención<br>" +
+      "• 🧪 Fase de Laboratorio — Peritación<br>" +
+      "• 🏛️ Fase de Disposición Judicial — Resguardo y Exhibición<br>" +
+      "• ⚰️ Fase de Disposición Final — Cierre<br><br>" +
+      "Y las figuras continuas: Resguardo, Traslado y Transferencia."
+    );
+    return;
+  }
+  if (question) {
+    chatBotReply(
+      `<strong>📍 Ubicación actual:</strong><br>` +
+      `Escena: ${stage.title}<br>` +
+      `Pregunta: ${state.currentQuestionIndex + 1} de ${stage.questions.length}<br><br>` +
+      `<strong>Fase:</strong> ${question.phase}<br>` +
+      `<strong>Instrumento:</strong> ${question.instrumentEvaluated}`
+    );
+  } else {
+    chatBotReply(`Estás en <strong>${stage.title}</strong>.<br>Ubicación: ${stage.location}`);
+  }
 }
 
 function chatHandleExplain() {
@@ -2599,54 +2764,50 @@ function chatHandleInstrument() {
   }
 }
 
-function chatHandleFase() {
-  const { stage, question } = chatGetCurrentContext();
-  if (!stage) {
-    chatBotReply("Estás en la **portada**. Las fases del Manual Único son: **Inicial** → **Laboratorio** → **Disposición Judicial** → **Disposición Final**. Y las figuras continuas: Resguardo, Traslado y Transferencia.");
-    return;
-  }
-  if (question) {
-    chatBotReply(`Estás en <strong>${stage.title}</strong>, pregunta ${state.currentQuestionIndex + 1} de ${stage.questions.length}.<br><br><strong>Fase actual:</strong> ${question.phase}<br><strong>Instrumento:</strong> ${question.instrumentEvaluated}`);
-  } else {
-    chatBotReply(`Estás en <strong>${stage.title}</strong>. Ubicación: ${stage.location}`);
-  }
-}
-
+// ---------- INPUT DEL USUARIO ----------
 function chatHandleUserInput(text) {
   const lower = text.toLowerCase().trim();
   if (!lower) return;
-
   chatAddMessage(text, 'user');
 
-  const key = Object.keys(CHATBOT_KB).find(k => lower.includes(k));
-  if (key) {
-    chatBotReply(CHATBOT_KB[key]);
-    return;
+  if (/analiza|analizar|respuesta correcta|cuál es la correcta|que opción|qué opción/.test(lower)) {
+    chatAnalizarPreguntaActual(); return;
+  }
+  if (/explica las opciones|todas las opciones|por qué las opciones/.test(lower)) {
+    chatExplicarOpciones(); return;
+  }
+  if (/pista|ayuda|socorro|no sé|no se|dame una/.test(lower)) {
+    chatHandleHint(); return;
+  }
+  if (/fase|dónde estoy|donde estoy|ubicación|ubicacion/.test(lower)) {
+    chatHandleFase(); return;
+  }
+  if (/instrumento|herramienta|kit/.test(lower)) {
+    chatHandleInstrument(); return;
+  }
+  if (/hola|buenas|hey|saludos|qué tal|que tal/.test(lower)) {
+    chatBotReply("¡Hola de nuevo! ¿Necesitas que analice la pregunta actual o prefieres que te explique algún concepto?"); return;
   }
 
-  if (/hola|buenas|hey|saludos/.test(lower)) {
-    chatBotReply("¡Hola de nuevo! ¿Necesitas una **pista**, una **explicación** o quieres consultar un **instrumento** del Manual Único?");
-    return;
-  }
-
-  if (/ayuda|help|socorro|no sé|no se/.test(lower)) {
-    chatHandleHint();
-    return;
-  }
+  const key = buscarEnKB(lower);
+  if (key) { chatBotReply(CHATBOT_KB[key]); return; }
 
   chatBotReply(
-    "No tengo respuesta específica para eso, pero puedo ayudarte con:<br>" +
-    "• <strong>💡 Pista</strong> — pista progresiva de la escena.<br>" +
-    "• <strong>📚 Explícame</strong> — fase y fundamento.<br>" +
-    "• <strong>🧰 Instrumento</strong> — detalle del instrumento evaluado.<br>" +
-    "• <strong>📋 Fase actual</strong> — ubicación en el sistema.<br><br>" +
-    "O escríbeme palabras clave: <em>Manual, PRCC, cadena, fases, obtención técnica, aseguramiento, consignación, derivación, ADN, vidrio, balística, huella, yeso, Art. 187, Art. 200, Art. 201</em>."
+    "No encontré respuesta exacta, pero puedo ayudarte con:<br><br>" +
+    "🔍 <strong>\"Analiza la pregunta\"</strong><br>" +
+    "📖 <strong>\"Explica las opciones\"</strong><br>" +
+    "💡 <strong>\"Dame una pista\"</strong><br>" +
+    "📍 <strong>\"¿Dónde estoy?\"</strong><br>" +
+    "🧰 <strong>\"Instrumento\"</strong><br><br>" +
+    "O escríbeme: <em>Manual, PRCC, fases, ADN, huella, embalaje, artículo 187</em>."
   );
 }
 
+// ---------- LISTENERS ----------
 document.getElementById('chatFab').onclick = () => {
   const w = document.getElementById('chatWindow');
   state_chat.open = !state_chat.open;
+  state_chat.userClosedManually = false;
   w.classList.toggle('open', state_chat.open);
   if (state_chat.open && !state_chat.greeted) {
     state_chat.greeted = true;
@@ -2658,6 +2819,7 @@ document.getElementById('chatFab').onclick = () => {
 
 document.getElementById('chatClose').onclick = () => {
   state_chat.open = false;
+  state_chat.userClosedManually = true;
   document.getElementById('chatWindow').classList.remove('open');
 };
 
@@ -2682,23 +2844,60 @@ document.querySelectorAll('.chat-quick-btn').forEach(btn => {
     if (action === 'explicar') chatHandleExplain();
     if (action === 'instrumento') chatHandleInstrument();
     if (action === 'fase') chatHandleFase();
+    if (action === 'analizar') chatAnalizarPreguntaActual();
+    if (action === 'opciones') chatExplicarOpciones();
   };
 });
 
-/* =========================================================================
-   REACCIÓN AUTOMÁTICA DEL BOT
-   ========================================================================= */
+// ---------- INTERCEPTAR RESPUESTA ----------
 const _originalHandleOption = handleOptionSelected;
 handleOptionSelected = function(selectedOptionId) {
-  _originalHandleOption(selectedOptionId);
   const stage = GAME_STAGES[state.currentStageIndex];
   const question = stage.questions[state.currentQuestionIndex];
   const opt = question.options.find(o => o.id === selectedOptionId);
-  if (!state_chat.open) return;
+
+  cancelarTimers();
+  _originalHandleOption(selectedOptionId);
+
   if (opt.isCorrect) {
-    chatBotReply("¡Excelente elección! Ese procedimiento está conforme al **Manual Único** y al **COPP 2021**. Recuerda: la cadena de custodia garantiza la **integridad del indicio** y su **validez judicial**. 👏");
+    state_chat.wrongCount = 0;
+    chatBotReply("✅ ¡Excelente! Procedimiento conforme al Manual Único y al COPP 2021. 👏");
   } else {
-    chatBotReply("Cuidado, perito. Ese procedimiento **contamina o destruye** el indicio o viola el protocolo. Lee con calma la corrección y pregúntame si necesitas que te explique el fundamento del Manual Único. 🔍");
+    state_chat.wrongCount++;
+    if (state_chat.wrongCount === 1) {
+      chatBotReply(
+        "❌ **Fallaste en tu primer intento.**<br><br>" +
+        "Lee la explicación que aparece abajo y pregúntate: ¿qué procedimiento del Manual se aplica en esta fase?<br><br>" +
+        "Si vuelves a fallar, te mostraré la **respuesta correcta directamente**.",
+        'tip'
+      );
+    } else if (state_chat.wrongCount >= 2) {
+      const correcta = question.options.find(o => o.isCorrect);
+      chatBotReply(
+        `🛑 **Segundo fallo. Aquí tienes la respuesta:**<br><br>` +
+        `✅ <strong>Opción ${correcta.id}:</strong> "${correcta.text}"<br><br>` +
+        `📖 <strong>Fundamento:</strong> ${question.feedbackCorrect.replace('+2 puntos.', '').trim()}`,
+        'tip'
+      );
+      state_chat.wrongCount = 0;
+    }
+  }
+};
+
+// ---------- INICIAR TIMER AL RENDERIZAR PREGUNTA ----------
+const _originalRenderQuestionScreen = renderQuestionScreen;
+renderQuestionScreen = function() {
+  _originalRenderQuestionScreen();
+  iniciarTimerPregunta();
+};
+
+// ---------- DETENER TIMER EN OTRAS PANTALLAS ----------
+const _originalShowScreen = showScreen;
+showScreen = function(screenId) {
+  _originalShowScreen(screenId);
+  if (screenId !== 'question') {
+    cancelarTimers();
+    state_chat.hintIndex = {};
   }
 };
 
